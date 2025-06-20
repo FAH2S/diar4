@@ -13,7 +13,7 @@ var (
 
 
 // Create user struct
-type userModel struct {
+type User struct {
     Username    string `json:"username"`
     Salt        string `json:"salt"`
     Hash        string `json:"hash"`
@@ -44,7 +44,7 @@ func isValidHexStringFn(hexStr string, hexStrName string, length int) error {
 }
 
 
-func (user *userModel) validate() error {
+func (user *User) Validate() error {
     if err := isValidUsernameFn(user.Username); err != nil {
         return err
     }

@@ -48,16 +48,16 @@ func TestBuildConnStrFromEnvMissingEnv(t *testing.T){
         t.Errorf("Wrong error value:\nExpected: %s\nGot: %s", expectedErr, err.Error())
     }
 }
-//}}}
+//}}} buildConnStrFromEnv
 
 
 //{{{ HandlePgError
 // Don't see point in unit testing
-//}}}
+//}}} HandlePgError
 
 
 //{{{ CheckRowsAffectedInsert
 // Don't see point in unit testing
-//}}}
+//}}} CheckRowsAffectedInsert
 
 

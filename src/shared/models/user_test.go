@@ -22,13 +22,13 @@ func Test_UserModel_Validate_Succ(t *testing.T) {
     // expected outcome
     expected := error(nil)
     // check
-    user := userModel{
+    user := User{
         Username:   userData["username"],
         Salt:       userData["salt"],
         Hash:       userData["hash"],
         EncSymkey:  userData["encSymkey"],
     }
-    actual := user.validate()
+    actual := user.Validate()
     if actual != expected {
         t.Errorf("\nExpected: %v\nGot:\n%v", expected, actual)
     }
