@@ -2,6 +2,7 @@ package shareddb
 import (
     "os"
     "fmt"
+    "database/sql"
 )
 import (
     "github.com/lib/pq"
@@ -53,8 +54,12 @@ func HandlePgError(err error) (int, error) {
 }
 
 
-func CheckRowsAffectedInsert(rows int64) error {
+func CheckRowsAffectedInsert(result sql.Result) error {
     fn := "CheckRowsAffectedInsert"
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("%s: failed to check rows affected: %w", fn, err)
+    }
     if rows != 1 {
         return fmt.Errorf("%s: expected 1 row affected, got %d", fn, rows)
     }

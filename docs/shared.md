@@ -42,7 +42,7 @@ Returns:
 - `error`:  if execution wasn't successful + explantion why<br><br>
 
 
-### Function: `CheckRowsAffectedInsert(rows int64) error`
+### Function: `CheckRowsAffectedInsert(result sql.Result) error`
 Check if rows affected is not zero<br>
 
 Returns:
