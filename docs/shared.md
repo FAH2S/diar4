@@ -26,7 +26,7 @@ Logic:
 - Format connection string from enviroment variables<br>
 
 Returns:
-- `string`: connection string ex.:
+- `string`: connection string ex.: `postgres://testuser:testpass@localhost:5432/testdb?sslmode=disable`
 - `error`:  if any variable is missing or `""` empty string<br><br>
 
 
@@ -78,6 +78,10 @@ Requirements:
 - instance: [`User`](#struct-usermodel)
 - function: [`isValidUsernameFn()`](#function-isvalidusernamefnusername-stringerror)
 - function: [`isValidHexStringFn()`](#function-isvalidhexstringfnhexstr-string-hexstrname-string-length-interror)<br>
+
+Logic:
+- Call isValidusernameFn()
+- Call isValidHexStringFn() for `salt`, `hash`, `enc_symkey`<br>
 
 Returns:
 - `error`: if dosen't meet requirements + explanation why<br><br>
