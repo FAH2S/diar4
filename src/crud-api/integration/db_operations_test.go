@@ -113,7 +113,7 @@ func TestInsertUser(t *testing.T) {
         expectedError       error
     }{
         {
-            name:               "valid input",
+            name:               "validInput",
             user:               smodels.User{
                 Username:   "test_user_123",
                 Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
@@ -123,7 +123,7 @@ func TestInsertUser(t *testing.T) {
             expectedStatusCode: 201,
             expectedError:      nil,
         }, {
-            name:               "user already exists",
+            name:               "userAlreadyExists",
             user:               smodels.User{
                 Username:   "test_user_123",
                 Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
@@ -133,7 +133,7 @@ func TestInsertUser(t *testing.T) {
             expectedStatusCode: 409,
             expectedError:      errors.New("user already exists"),
         }, {// Keep in mind this is DB constraint check not .validate (validate is endpoint lvl)
-            name:               "unprocessable salt",
+            name:               "unprocessableSalt",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
                 Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
@@ -143,7 +143,7 @@ func TestInsertUser(t *testing.T) {
             expectedStatusCode: 422,
             expectedError:      errors.New("violates check constraint \"users_salt_check\""),
         }, {// Keep in mind this is DB constraint check not .validate (validate is endpoint lvl)
-            name:               "unprocessable hash",
+            name:               "unprocessableHash",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
                 Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
@@ -153,7 +153,7 @@ func TestInsertUser(t *testing.T) {
             expectedStatusCode: 422,
             expectedError:      errors.New("violates check constraint \"users_hash_check\""),
         }, {// Keep in mind this is DB constraint check not .validate (validate is endpoint lvl)
-            name:               "unprocessable enc_symkey",
+            name:               "unprocessableEnc_symkey",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
                 Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
@@ -182,7 +182,6 @@ func TestInsertUser(t *testing.T) {
         })
     }
 }
-
-
-
 //}}} Insert user
+
+

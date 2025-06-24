@@ -89,6 +89,25 @@ Body:
 ## Middleware
 
 ## Endpoint
+### Wrapper: `CreateUserEndpoint(w http.ResonseWriter, r *http.Request, db *sql.DB)`
+Accept package, convert to user model, insert to DB.<br>
+
+Requirements:
+- pointer to sql.DB instance
+- function: [`Validate`](shared.md#wrapper-validate-error) from shared/models
+- function: [`APIResponseWriter`]() from shared/API //TODO: dosen't exist yet<br>
+
+Logic:
+- Decode JSON into user model //TODO: extract as sub/dry/fn
+- Call user.Validate
+- Call InsertUser
+- return APIResponse //TODO: need link to it (not made yet)<br>
+
+Returns:
+- api response [`APIResponse`](crud-api.md#api-responses)<br>
+
+Side effects:
+Change DB, if successful insert user (indirectly via InsertUser)<br><br>
 
 ## Function
 ### Wrapper: `InsertUser(db *sql.DB, user models.User) (int, error)`
