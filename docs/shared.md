@@ -5,7 +5,7 @@ Creates new connection to database from environment variables.<br>
 
 Requirements:
 - `DB_USER, DB_PWD, DB_HOST, DB_PORT, DB_NAME` must be set as non empty string.
-- function: [`buildConnStrFromEnv()`](#function-buildconnstrfromenvfn)
+- function: [`buildConnStrFromEnv()`](share.md#function-buildconnstrfromenvfn)
 - sql.Open<br>
 
 Logic:
@@ -75,9 +75,9 @@ Returns:
 checks if instance is valid.<br>
 
 Requirements:
-- instance: [`User`](#struct-usermodel)
-- function: [`isValidUsernameFn()`](#function-isvalidusernamefnusername-stringerror)
-- function: [`isValidHexStringFn()`](#function-isvalidhexstringfnhexstr-string-hexstrname-string-length-interror)<br>
+- instance: [`User`](shared.md#struct-user)
+- function: [`isValidUsernameFn()`](shared.md#function-isvalidusernamefnusername-string-error)
+- function: [`isValidHexStringFn()`](shared.md#function-isvalidhexstringfnhexstr-string-hexstrname-string-length-int-error)<br>
 
 Logic:
 - Call isValidusernameFn()

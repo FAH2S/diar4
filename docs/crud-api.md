@@ -22,10 +22,11 @@ Use Case:
 
 ## Users
 <!-- {{{ Users -->
-POST /create/user
-payload format:
+POST /create/user<br>
 Headers:
+```
     Content-Type: application/json
+```
 Body:
 ```
     {
@@ -95,9 +96,9 @@ Create query insert to database, check insertion result<br>
 
 Requirements:
 - pointer to sql.DB instance
-- instance: [`User`](shared.md#struct-usermodel) from shared/models
-- function: [`HandlePgError()`](shared.md#handlepgerrorerr-error-int-error) from shared/db
-- function: [`CheckRowsAffectedInsert()`](shared.md#checkrowsaffectedinsertrows-int64-error) from shared/db<br>
+- instance: [`User`](shared.md#struct-user) from shared/models
+- function: [`HandlePgError()`](shared.md#function-handlepgerrorerr-error-int-error) from shared/db
+- function: [`CheckRowsAffectedInsert()`](shared.md#function-checkrowsaffectedinsertresult-sqlresult-error) from shared/db<br>
 
 Logic:
 - Create sql query
