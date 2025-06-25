@@ -1,8 +1,10 @@
-package user
+package cruduser
 import (
     "fmt"
     "log"
     "net/http"
+    "encoding/json"
+    "database/sql"
 )
 import (
     smodels "github.com/FAH2S/diar4/src/shared/models"
@@ -13,7 +15,7 @@ import (
 func CreateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     var (
         fn          = "CreateUserEndpoint"
-        user        = smodels.User
+        user        = smodels.User{}
         statusCode  = 500
         message     = "Fail: create user ''"
         errMessage  = "Unknown error occured"
@@ -44,12 +46,12 @@ func CreateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
         errMessage = ""
     case 409:
         message = fmt.Sprintf("Fail: create user '%s'", user.Username)
-        errMessage = "User already exist")
+        errMessage = "User already exist"
     case 422:
         message = fmt.Sprintf("Fail: create user '%s'", user.Username)
         errMessage = fmt.Sprintf("Invalid input format: %v", err)
     case 500:
-        errMsg = "Internal server error"
+        errMessage = "Internal server error"
     default:
         log.Printf("%s: Unknown error occured: %v", fn, err)
     }

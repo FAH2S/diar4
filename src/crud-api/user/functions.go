@@ -1,4 +1,4 @@
-package user
+package cruduser
 import (
     "fmt"
     "database/sql"
@@ -10,7 +10,7 @@ import (
 
 
 func InsertUser(db *sql.DB, user smodels.User) (int, error) {
-    fn := "insertUser"
+    fn := "InsertUser"
     // Create sql query
     query := `
         INSERT INTO users (username, salt, hash, enc_symkey)
