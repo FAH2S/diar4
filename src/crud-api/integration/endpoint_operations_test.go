@@ -3,6 +3,7 @@ import (
     "testing"
     "database/sql"
     "encoding/json"
+    "net/http"
     "net/http/httptest"
     "strings"
     "reflect"
@@ -10,6 +11,7 @@ import (
 import (
     sapi "github.com/FAH2S/diar4/src/shared/api"
     cruduser "github.com/FAH2S/diar4/src/crud-api/user"
+    crudmiddleware "github.com/FAH2S/diar4/src/crud-api/middleware"
 )
 
 
@@ -54,10 +56,61 @@ func assertResponse(
 //}}} DRY
 
 
-// TODO:
-// bad JSON 400
-// wrong header 400
-// wrong method aka GET
+//{{{ Middleware
+type MiddlewareTestCase struct {
+    Name                string
+    Method              string
+    ContentType         string
+    ExpectedStatusCode  int
+    ExpectedMessage     string
+    ExpectedError       string
+    ExpectedData        interface{}
+}
+
+
+// Wrong header
+// Wrong method (GET)
+func TestMiddlewareEndpointMethodFail(t *testing.T){
+    // Mock object, for storing response
+    resp := httptest.NewRecorder()
+    // Create request
+    req := httptest.NewRequest("GET", "/test", nil)
+    req.Header.Set("Content-Type", "application/json")
+
+    // Wrap endpoint with middleware
+    handler := crudmiddleware.ValidateMethodAndTypeEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(200)
+    }))
+    // Call hander to simulate req and resp
+    handler.ServeHTTP(resp, req)
+    // Check result
+    if resp.Code != 400 {
+        t.Errorf("Unexpeted status code:\nGot:\t%d\nWant:\t%d", resp.Code, 400)
+    }
+}
+
+
+func TestMiddlewareEndpointHeaderFail(t *testing.T){
+    // Mock object, for storing response
+    resp := httptest.NewRecorder()
+    // Create request
+    req := httptest.NewRequest("POST", "/test", nil)
+    req.Header.Set("Content-Type", "plain/text")
+
+    // Wrap endpoint with middleware
+    handler := crudmiddleware.ValidateMethodAndTypeEndpoint(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(200)
+    }))
+    // Call hander to simulate req and resp
+    handler.ServeHTTP(resp, req)
+    // Check result
+    if resp.Code != 400 {
+        t.Errorf("Unexpeted status code:\nGot:\t%d\nWant:\t%d", resp.Code, 400)
+    }
+}
+//}}} Middleware
+
+
 //{{{ CreateUserEndpoint
 func TestCreateUserEndpoint(t *testing.T){
     tests := []EndpointTestCase{
@@ -67,11 +120,20 @@ func TestCreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
                 "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
-            }`,
+                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31" }`,
             ExpectedStatusCode: 201,
             ExpectedMessage:    "Success: create user 'test_user_endpoint1'",
             ExpectedError:      "",
+            ExpectedData:       nil,
+        }, {
+            Name:               "MalformedJSON",
+            Body:               `{
+                "username":"test_user_endpoint1",
+                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c47`,
+            ExpectedStatusCode: 400,
+            ExpectedMessage:    "Fail: create user ''",
+            ExpectedError:      "Invalid JSON",
             ExpectedData:       nil,
         }, {
             Name:               "UserAlreadyExist",

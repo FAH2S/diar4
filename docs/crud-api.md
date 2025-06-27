@@ -20,6 +20,42 @@ Use Case:
     operations.
 
 
+## Middleware
+<!-- {{{ Middleware -->
+Middleware that checks for method (POST) and header (Content-Type: application/json).
+## API Respnse
+    400 Bad Request
+```
+    {
+        "message":  "Fail: to process 'URL path:[/create/user, /read/user ...]'",
+        "error":    "Method not allowed"/"Content-Type must be application/json",
+        "data":     nil,
+    }
+```
+## Endpoint
+### Wrapper: `ValidateMethodAndTypeEndpoint(next http.Handler) http.Handler`
+Intercepts packet and check if it uses correct method and header.<br>
+
+Requirements:
+- http.Handler
+- function: [`isMethodPOSTFn`](crud-api.md#function-ismethodpostfnr-httprequest-bool)
+- function: [`isHeaderCTAJFn`](crud-api.md#function-isheaderctajfnr-httprequest-bool)<br>
+
+Logic:
+- Call `isMethodPOSTFn`
+- Call `isHeaderCTAJFn`
+- Pass packet to CRUD<br>
+
+Retruns:
+- `http.Handler`: if both check pass request is forwarded to next handler<br>
+(e.g., handler for /create/user)
+
+### Function: `isMethodPOSTFn(r *http.Request) bool`
+Checks if method is POST
+### Function: `isHeaderCTAJFn(r *http.Request) bool`
+Check if it contains header `Content-Type: application/json`
+<!-- }}} Middleware --><br>
+
 ## Users
 <!-- {{{ Users -->
 POST /create/user<br>
@@ -85,9 +121,6 @@ Body:
 <!-- Response }}} -->
 ## Flow
 <!-- {{{ Flow -->
-
-## Middleware
-
 ## Endpoint
 ### Wrapper: `CreateUserEndpoint(w http.ResonseWriter, r *http.Request, db *sql.DB)`
 Accept package, convert to user model, insert to DB.<br>
