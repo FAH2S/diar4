@@ -234,7 +234,7 @@ Create query to select/fetch user from database, check, selection result<br>
 Requirements:
 - pointer to sql.DB instance
 - instance: [`User`](shared.md#struct-user) from shared/models
-- wrapper: [`HandleSelectError()`](shared.md#wrapper-handleselecterrorerr-error-fn-string-int-error) from shared/models<br>
+- wrapper: [`HandleSelectError()`](shared.md#wrapper-handleselecterrorerr-error-int-error) from shared/models<br>
 
 Logic:
 - Create sql query

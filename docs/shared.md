@@ -42,7 +42,7 @@ Returns:
 - `error`:  if execution wasn't successful + explantion why<br><br>
 
 
-### Wrapper: `HandleSelectError(err error, fn string) (int, error) {
+### Wrapper: `HandleSelectError(err error) (int, error)`
 Check if quert returned no rows or failed to execute.<br>
 
 Logic:
