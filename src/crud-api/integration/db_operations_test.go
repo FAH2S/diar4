@@ -1,9 +1,10 @@
 package integration
 import (
     "testing"
-    "database/sql"
     "errors"
     "strings"
+    "reflect"
+    "fmt"
 )
 import (
     _ "github.com/lib/pq"
@@ -13,17 +14,10 @@ import (
 
 
 //{{{ Insert user
-func TestInsertUser(t *testing.T) {
-    connStr, err := getPostgresConnStr()
-    if err != nil {
-        t.Fatal("Failed to get conn string: %w", err)
-    }
-    db, err := sql.Open("postgres", connStr)
-    if err != nil {
-        t.Fatal("Failed to open DB:", err)
-    }
-    defer db.Close()
-
+func Test_InsertUser(t *testing.T) {
+    validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     tests := []struct {
         name                string
         user                smodels.User
@@ -34,9 +28,9 @@ func TestInsertUser(t *testing.T) {
             name:               "validInput",
             user:               smodels.User{
                 Username:   "test_user_123",
-                Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                Salt:       validSalt,
+                Hash:       validHash,
+                EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 201,
             expectedError:      nil,
@@ -44,9 +38,9 @@ func TestInsertUser(t *testing.T) {
             name:               "userAlreadyExists",
             user:               smodels.User{
                 Username:   "test_user_123",
-                Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                Salt:       validSalt,
+                Hash:       validHash,
+                EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 409,
             expectedError:      errors.New("user already exists"),
@@ -54,9 +48,9 @@ func TestInsertUser(t *testing.T) {
             name:               "unprocessableSalt",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
-                Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
-                Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                Salt:       "invalid_salt",
+                Hash:        validHash,
+                EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 422,
             expectedError:      errors.New("violates check constraint \"users_salt_check\""),
@@ -64,9 +58,9 @@ func TestInsertUser(t *testing.T) {
             name:               "unprocessableHash",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
-                Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
-                Hash:       "0c8fd825308df79b313a7$b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                Salt:       validSalt, 
+                Hash:       "invalid_hash",
+                EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 422,
             expectedError:      errors.New("violates check constraint \"users_hash_check\""),
@@ -74,8 +68,8 @@ func TestInsertUser(t *testing.T) {
             name:               "unprocessableEncSymkey",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
-                Salt:       "344feecf40d375380ed5fe0341a87aa5df6d49c4e31",
-                Hash:       "0c8fd825308df79b313a7$b90ee93f7d889207c2277c477b424f83162a5aa4de",
+                Salt:       validSalt,
+                Hash:       validHash,
                 EncSymkey:  "",
             },
             expectedStatusCode: 422,
@@ -101,5 +95,77 @@ func TestInsertUser(t *testing.T) {
     }
 }
 //}}} Insert user
+
+
+//{{{ Select user
+func Test_SelectUser(t *testing.T) {
+    validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    // Create user that will be fetched (not dependant on previous tests)
+    createUser := smodels.User{
+        Username:   "test_select_user1",
+        Salt:       validSalt,
+        Hash:       validHash,
+        EncSymkey:  validEncSymkey,
+    }
+    _, err := cruduser.InsertUser(db, createUser)
+    if err != nil {
+        t.Fatalf("Failed to create user that will be read/fetch-ed: %v", err)
+    }
+
+    // Test cases and its expected result
+    tests := []struct {
+        name                string
+        username            string
+        expectedStatusCode  int
+        expectedError       error
+        expectedData        *smodels.User
+    }{
+        {
+            name:               "validInput",
+            username:           "test_select_user1",
+            expectedStatusCode: 200,
+            expectedError:      nil,
+            expectedData:       &smodels.User{
+                Username:   "test_select_user1",
+                Salt:       validSalt,
+                Hash:       validHash,
+                EncSymkey:  validEncSymkey,
+            },
+        }, {
+            name:               "notFound",
+            username:           "not_found",
+            expectedStatusCode: 404,
+            expectedError:      fmt.Errorf("user not found"),
+            expectedData:       nil,
+        },
+
+    }
+    // Iterate
+    for _, tc := range tests{
+        t.Run(tc.name, func(t *testing.T) {
+            statusCode, user, err := cruduser.SelectUser(db, tc.username)
+            if tc.expectedStatusCode != statusCode {
+                t.Errorf("\nExpected:\t%d\nGot:\t%d", tc.expectedStatusCode, statusCode)
+            }
+
+            if (err == nil) != (tc.expectedError == nil) {
+                t.Errorf("\nExpected:\t%v\nGot:\t%v", tc.expectedError, err)
+            } else if err != nil &&
+                tc.expectedError != nil &&
+                !strings.Contains(err.Error(), tc.expectedError.Error()){
+                t.Errorf("\nExpected to contain:\t%q\nGot:\t\t\t%q", tc.expectedError, err)
+            }
+            fmt.Printf("got: %T", user)
+            fmt.Printf("want: %T", tc.expectedData)
+            if !reflect.DeepEqual(user, tc.expectedData) {
+                t.Errorf("\nExpected data not same\nWant:\t%+v\nGot:\t%+v", tc.expectedData, user)
+            }
+        })
+    }
+}
+//}}} Select user
+
 
 

@@ -10,25 +10,33 @@ import (
 import (
     "github.com/testcontainers/testcontainers-go/wait"
     "github.com/testcontainers/testcontainers-go"
+    sdb "github.com/FAH2S/diar4/src/shared/db"
 )
 
 
 var postgresContainer testcontainers.Container
 var ctx context.Context
+var db *sql.DB
 
 
 //{{{ helper
-func getPostgresConnStr() (string, error) {
+func initialzeDbTestEnv() error {
     host, err := postgresContainer.Host(ctx)
     if err != nil {
-        return "", err
+        return err
     }
     port, err := postgresContainer.MappedPort(ctx, "5432")
     if err != nil {
-        return "", err
+        return err
     }
+    os.Clearenv()
+    os.Setenv("DB_USER", "testuser")
+    os.Setenv("DB_PWD", "testpass")
+    os.Setenv("DB_NAME", "testdb")
+    os.Setenv("DB_HOST", host)
+    os.Setenv("DB_PORT", port.Port())
 
-    return fmt.Sprintf("postgres://testuser:testpass@%s:%s/testdb?sslmode=disable", host, port.Port()), nil
+    return nil
 }
 
 
@@ -51,29 +59,12 @@ func startPostgresContainer(ctx context.Context) (testcontainers.Container, erro
         ),
         WaitingFor: wait.ForListeningPort("5432/tcp"),
     }
+    // testcontainers.GenericContainer retrurns container + error on its own no need 
+    //  for explicit error(nil) return
     return testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
         ContainerRequest: req,
         Started:          true,
     })
-}
-
-
-func checkPostgresConnection() error {
-    connStr, err := getPostgresConnStr()
-
-    db, err := sql.Open("postgres", connStr)
-    if err != nil {
-        return fmt.Errorf("failed to open DB: %w", err)
-    }
-    defer db.Close()
-
-    err = db.Ping()
-    if err != nil {
-        return fmt.Errorf("failed to ping DB: %w", err)
-    }
-
-    return nil
-
 }
 //}}} helper
 
@@ -81,19 +72,26 @@ func checkPostgresConnection() error {
 func TestMain(m *testing.M) {
     ctx = context.Background()
 
+    //need to declare err becuse we can't use := operator on globar var
+    //  in this case `postgresContainer`
     var err error
     postgresContainer, err = startPostgresContainer(ctx)
     if err != nil {
         panic(fmt.Errorf("Failed to start postgres container: %w", err))
     }
-    if err := checkPostgresConnection(); err != nil {
-        panic(fmt.Errorf("DB connection test failed: %w", err))
+    err = initialzeDbTestEnv()
+    if err != nil {
+        panic(fmt.Errorf("Failed to initialize DB env's"))
     }
-
+    db, err = sdb.GetConn()
+    if err != nil {
+        panic(fmt.Errorf("Failed to initialize db conn: %w", err))
+    }
+    // Run tests
     code := m.Run()
-
+    // Teardown
+    db.Close()
     _ = postgresContainer.Terminate(ctx)
-
     os.Exit(code)
 }
 

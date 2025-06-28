@@ -1,12 +1,19 @@
 package shareddb
 import (
     "os"
+    "fmt"
     "testing"
+    "strings"
+    "errors"
+    "database/sql"
+)
+import (
+    "github.com/lib/pq"
 )
 
-//{{{ buildConnStrFromEnv
+//{{{ buildConnStrFromEnvFn
 // succ
-func TestBuildConnStrFromEnvSucc(t *testing.T){
+func Test_BuildConnStrFromEnv_Succ(t *testing.T){
     os.Clearenv()
     // Set required env vars for test
     os.Setenv("DB_USER", "testuser")
@@ -18,46 +25,198 @@ func TestBuildConnStrFromEnvSucc(t *testing.T){
     // expected outcome
     expected := "postgres://testuser:testpass@localhost:5432/testdb?sslmode=disable"
     // check
-    actual, err := buildConnStrFromEnv()
+    actual, err := buildConnStrFromEnvFn()
     if err != nil {
         t.Fatalf("Fatal, expected no error, got: %v", err)
     }
     if actual != expected {
-        t.Errorf("Wrong return value:\nExpected: %s\nGot: %s", expected, actual)
+        t.Errorf("Wrong return value:\nExpected:\t%s\nGot:\t\t%s", expected, actual)
     }
 }
 
 
 // fail, missing env
-func TestBuildConnStrFromEnvMissingEnv(t *testing.T){
+func Test_BuildConnStrFromEnv_MissingEnv(t *testing.T){
     // Clear env to cause err
     os.Clearenv()
 
     // expected outcome
     expected := ""
-    expectedErr := "buildConnStrFromEnv: Required environment variable DB_USER, not set\n"
+    expectedErr := "buildConnStrFromEnvFn: Required environment variable DB_USER, not set\n"
     // check
-    actual, err := buildConnStrFromEnv()
+    actual, err := buildConnStrFromEnvFn()
     if err == nil {
         t.Fatalf("Fatal, epected error, got nil")
     }
     if actual != expected {
-        t.Errorf("Wrong string value:\nExpected: %s\nGot: %s", expected, actual)
+        t.Errorf("Wrong string value:\nExpected:\t%s\nGot:\t\t%s", expected, actual)
     }
     if err.Error() != expectedErr {
-        t.Errorf("Wrong error value:\nExpected: %s\nGot: %s", expectedErr, err.Error())
+        t.Errorf("Wrong error value:\nExpected:\t%s\nGot:\t\t%s", expectedErr, err.Error())
     }
 }
-//}}} buildConnStrFromEnv
+//}}} buildConnStrFromEnvFn
 
 
 //{{{ HandlePgError
-// Don't see point in unit testing
+func Test_HandlePgErrorFn(t *testing.T) {
+    tests := []struct {
+        name                string
+        inputErr            error
+        expectedStatus      int
+        expectedErrSubStr   string
+    }{
+        {
+            name:               "UniqueViolation",
+            inputErr:           &pq.Error{Code: "23505"},
+            expectedStatus:     409,
+            expectedErrSubStr:  "users already exists",
+        },{
+            name:               "CheckConstraintViolation",
+            inputErr:           &pq.Error{Code: "23514"},
+            expectedStatus:     422,
+            expectedErrSubStr:  "invalid users data/format",
+        },{
+            name:               "UnknownColumn",
+            inputErr:           &pq.Error{Code: "42703"},
+            expectedStatus:     400,
+            expectedErrSubStr:  "unknown column used",
+        },{
+            name:               "UnhandledPqError",
+            inputErr:           &pq.Error{Code: "999999999"},
+            expectedStatus:     500,
+            expectedErrSubStr:  "failed to execute query",
+        },{
+            name:               "NonPqError",
+            inputErr:           fmt.Errorf("some non pq error"),
+            expectedStatus:     500,
+            expectedErrSubStr:  "unexpected error",
+        },
+
+    }
+
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            statusCode, err := HandlePgErrorFn("users", tc.inputErr)
+            if statusCode != tc.expectedStatus {
+                t.Errorf("Wrong status code:\nExpected:\t%d\nGot:\t\t%d", tc.expectedStatus, statusCode)
+            }
+            if err == nil || !strings.Contains(err.Error(), tc.expectedErrSubStr) {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+        })
+    }
+}
 //}}} HandlePgError
 
 
+//{{{ HandleSelectErrorFn
+func Test_HandleSelectErrorFn(t *testing.T) {
+    tests := []struct{
+        name                string
+        inputErr            error
+        expectedStatusCode  int
+        expectedErrSubStr   string
+    }{
+        {
+            name:               "success",
+            inputErr:           nil,
+            expectedStatusCode: 200,
+            expectedErrSubStr:  "",
+        }, {
+            name:               "notFound",
+            inputErr:           sql.ErrNoRows,
+            expectedStatusCode: 404,
+            expectedErrSubStr:  "HandleSelectErrorFn: user not found/dosen't exist",
+        }, {
+            name:               "queryNotExecuted",
+            inputErr:           fmt.Errorf("any error"),
+            expectedStatusCode: 500,
+            expectedErrSubStr:  "failed to execute query",
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T){
+            statusCode, err := HandleSelectErrorFn(tc.inputErr)
+            // Check status code
+            if statusCode != tc.expectedStatusCode {
+                t.Errorf("Wrong status code:\nExpected:\t%d\nGot:\t\t%d", tc.expectedStatusCode, statusCode)
+            }
+            // Check error, not expecting but got err
+            if tc.expectedErrSubStr == "" && err != nil {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+            // Check error, expecting but got none
+            if tc.expectedErrSubStr != "" && err == nil {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%v", tc.expectedErrSubStr, err)
+            }
+            // Chech error, substring match
+            if tc.expectedErrSubStr != "" && err != nil && !strings.Contains(err.Error(), tc.expectedErrSubStr) {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+        })
+    }
+}
+//}}} HandleSelectErrorFn
+
+
 //{{{ CheckRowsAffectedInsert
-// Don't see point in unit testing
+//{{{ helper
+type mockResult struct {
+    rows    int64
+    err     error
+}
+func (m mockResult) RowsAffected() (int64, error) {
+    return m.rows, m.err
+}
+// Not used but still need to be implemented /shrug
+func (m mockResult) LastInsertId() (int64, error) {
+    return 0, nil
+}
+//}}} helper
+
+
+func Test_CheckRowsAffectedInsertFn(t *testing.T) {
+    tests := []struct {
+        name        string
+        result      sql.Result
+        expectError bool
+        errorSubstr string
+    }{
+        {
+            name:        "Success",
+            result:      mockResult{rows: 1, err: nil},
+            expectError: false,
+        }, {
+            name:        "WrongRowCount",
+            result:      mockResult{rows: 0, err: nil},
+            expectError: true,
+            errorSubstr: "expected 1 row affected",
+        }, {
+            name:        "ErrorFromRowsAffected",
+            result:      mockResult{rows: 0, err: errors.New("boom")},
+            expectError: true,
+            errorSubstr: "failed to check rows affected",
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            err := CheckRowsAffectedInsertFn(tc.result)
+            if tc.expectError {
+                if err == nil || !strings.Contains(err.Error(), tc.errorSubstr) {
+                    t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%v", tc.errorSubstr, err)
+                }
+            } else {
+                if err != nil {
+                    t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%v", tc.errorSubstr, err)
+                }
+            }
+        })
+    }
+}
 //}}} CheckRowsAffectedInsert
 
 

@@ -12,7 +12,7 @@ type APIResponse struct {
 }
 
 
-func WriteJSONResponse(w http.ResponseWriter, statusCode int, message string, errMsg string, data interface{}) {
+func WriteJSONResponseFn(w http.ResponseWriter, statusCode int, message string, errMsg string, data interface{}) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(statusCode)
 

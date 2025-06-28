@@ -58,6 +58,7 @@ Check if it contains header `Content-Type: application/json`
 
 ## Users
 <!-- {{{ Users -->
+<!-- {{{ CREATE User -->
 POST /create/user<br>
 Headers:
 ```
@@ -74,8 +75,8 @@ Body:
     }
 ```
 
-## API Responses
 <!-- {{{ Responses: 201, 400, 409, 422, 500 -->
+## API Responses
 > `username` might be ommited if no username provided or wrong content-type
 
     201 Created
@@ -119,25 +120,26 @@ Body:
     }
 ```
 <!-- Response }}} -->
-## Flow
 <!-- {{{ Flow -->
+## Flow
 ## Endpoint
-### Wrapper: `CreateUserEndpoint(w http.ResonseWriter, r *http.Request, db *sql.DB)`
+### Wrapper: `CreateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
 Accept package, convert to user model, insert to DB.<br>
 
 Requirements:
 - pointer to sql.DB instance
 - function: [`Validate`](shared.md#wrapper-validate-error) from shared/models
-- function: [`APIResponseWriter`]() from shared/API //TODO: dosen't exist yet<br>
+- wrapper:  [`InsertUser`](#wrapper-insertuserdb-sqldb-user-modelsuser-int-error)
+- function: [`WriteJSONResponseFn`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
 
 Logic:
-- Decode JSON into user model //TODO: extract as sub/dry/fn
-- Call user.Validate
-- Call InsertUser
-- return APIResponse //TODO: need link to it (not made yet)<br>
+- Decode JSON into `user` model
+- Call `user.Validate()`
+- Call `InsertUser()`
+- return `APIResponse`<br>
 
 Returns:
-- api response [`APIResponse`](crud-api.md#api-responses)<br>
+- api response [`APIResponse`](shared.md#struct-apiresponse)<br>
 
 Side effects:
 Change DB, if successful insert user (indirectly via InsertUser)<br><br>
@@ -149,22 +151,132 @@ Create query insert to database, check insertion result<br>
 Requirements:
 - pointer to sql.DB instance
 - instance: [`User`](shared.md#struct-user) from shared/models
-- function: [`HandlePgError()`](shared.md#function-handlepgerrorerr-error-int-error) from shared/db
-- function: [`CheckRowsAffectedInsert()`](shared.md#function-checkrowsaffectedinsertresult-sqlresult-error) from shared/db<br>
+- function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
+- function: [`CheckRowsAffectedInsertFn()`](shared.md#function-checkrowsaffectedinsertfnresult-sqlresult-error) from shared/db<br>
 
 Logic:
 - Create sql query
-- Call db.Exec
-- Call HandlePgError()
-- Call CheckRowsAffectedInsert<br>
+- Call `db.Exec()`
+- Call `HandlePgErrorFn()` if error present
+- Call `CheckRowsAffectedInsertFn()`<br>
 
 Returns:
 - `int`:    http status code
-- `error`:  if execustion wasn't successful + explanation why<br>
+- `error`:  if execution wasn't successful + explanation why<br>
 
 Side effects:
 Change DB, if successful insert user<br><br>
 <!-- Flow }}} -->
+<!-- }}}CREATE User -->
+
+
+<!-- {{{ READ User -->
+POST /read/user<br>
+Headers:
+```
+    Content-Type: application/json
+```
+Body:
+```
+    {
+        "username":     string  (required, mina_len: 3, max_len: 30,
+                                pattern: ^[a-zA-Z0-9_]+$)
+    }
+```
+<!-- {{{ Responses: 200, 400, 404, 422, 500 -->
+## API Responses
+    200 OK
+```
+    {
+        "message":  "Success: read user '{username}'",
+        "error":    nil,
+        "data":     {JSON map of User model},
+    }
+```
+    400 Bad Request
+```
+    {
+        "message":  "Fail: read user ''",   //Malformed JSON can't process body aka extract username
+        "error":    "Invalid JSON",
+        "data":     nil,
+    }
+```
+    404 Not Found
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "User not found, dosen't exist",
+        "data":     nil,
+    }
+```
+    422 Unprocessable Entity
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "Invalid input format: username: [reason what is wrong]",
+        "data":     nil,
+    }
+```
+    500 Internal Server Error
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "Unknown error occured", "Internal server error"
+        "data":     nil,
+    }
+```
+<!-- }}} Responses: 200, 400, 404, 422, 500 -->
+<!-- {{{ Flow -->
+## Flow
+## Endpoint
+### Wrapper: `ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
+Accept package, checks if username is valid, fetches from DB.<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- function: [`ExtractJSONValueFn()`](shared.md#function-extractjsonvaluefnr-httprequest-key-string-target-interface-error) from shared/api
+- function: [`IsValidUsernameFn()`](shared.md#function-isvalidusernamefnusername-string-error) from shared/models
+- wrapper:  [`SelectUser()`](#wrapper-selectuserdb-sqldb-username-string-int-modelsuser-error)
+- function: [`WriteJSONResponseFn()`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
+
+Logic:
+- Call `ExtractJSONValueFn()` to get username
+- Call `IsValidUsernameFn()`
+- Call `SelectUser()`
+- return `APIResponse`<br><br>
+
+Returns:
+- api response [`APIResponse`](shared.md#struct-apiresponse)<br><br>
+
+
+### Wrapper: `SelectUser(db *sql.DB, username string) (int, *models.User, error)`
+Create query to select/fetch user from database, check, selection result<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- instance: [`User`](shared.md#struct-user) from shared/models
+- wrapper: [`HandleSelectErrorFn()`](shared.md#wrapper-handleselecterrorfnerr-error-int-error) from shared/db<br>
+
+Logic:
+- Create sql query
+- Create `user` instance
+- Call `db.QueryRow()`, then via `.Scan()` load result into `user` instance
+- Call `HandleSelectError()` <br>
+
+Returns:
+- `int`:            http status code
+- `models.User`:    pointer of selected/fetched user
+- `erorr`:          if execution wasn't successful + explanation why<br><br>
+<!-- }}} Flow -->
+<!-- }}} READ User -->
+
+
+<!-- {{{ UPDATE User -->
+<!-- }}} UPDATE User -->
+
+
+<!-- {{{ DELETE User -->
+<!-- }}} DELETE User -->
 <!-- Users }}} -->
 
 

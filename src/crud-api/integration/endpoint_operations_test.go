@@ -1,19 +1,19 @@
 package integration
 import (
     "testing"
-    "database/sql"
     "encoding/json"
     "net/http"
     "net/http/httptest"
     "strings"
     "reflect"
+    "fmt"
 )
 import (
     sapi "github.com/FAH2S/diar4/src/shared/api"
+    smodels "github.com/FAH2S/diar4/src/shared/models"
     cruduser "github.com/FAH2S/diar4/src/crud-api/user"
     crudmiddleware "github.com/FAH2S/diar4/src/crud-api/middleware"
 )
-
 
 //{{{ DRY
 type EndpointTestCase struct {
@@ -70,7 +70,7 @@ type MiddlewareTestCase struct {
 
 // Wrong header
 // Wrong method (GET)
-func TestMiddlewareEndpointMethodFail(t *testing.T){
+func Test_MiddlewareEndpoint_MethodFail(t *testing.T){
     // Mock object, for storing response
     resp := httptest.NewRecorder()
     // Create request
@@ -90,7 +90,7 @@ func TestMiddlewareEndpointMethodFail(t *testing.T){
 }
 
 
-func TestMiddlewareEndpointHeaderFail(t *testing.T){
+func Test_MiddlewareEndpoint_HeaderFail(t *testing.T){
     // Mock object, for storing response
     resp := httptest.NewRecorder()
     // Create request
@@ -112,85 +112,90 @@ func TestMiddlewareEndpointHeaderFail(t *testing.T){
 
 
 //{{{ CreateUserEndpoint
-func TestCreateUserEndpoint(t *testing.T){
+func Test_CreateUserEndpoint(t *testing.T){
+    validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     tests := []EndpointTestCase{
         {
             Name:               "CreateUser",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31" }`,
+                "salt":"%s",
+                "hash":"%s",
+                "enc_symkey":"%s"
+            }`, validSalt, validHash, validEncSymkey),
             ExpectedStatusCode: 201,
             ExpectedMessage:    "Success: create user 'test_user_endpoint1'",
             ExpectedError:      "",
             ExpectedData:       nil,
         }, {
             Name:               "MalformedJSON",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c47`,
+                "salt":"%s",
+                "hash":"0c8f
+                `, validSalt),
             ExpectedStatusCode: 400,
             ExpectedMessage:    "Fail: create user ''",
             ExpectedError:      "Invalid JSON",
             ExpectedData:       nil,
         }, {
             Name:               "UserAlreadyExist",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
-            }`,
+                "salt":"%s",
+                "hash":"%s",
+                "enc_symkey":"%s"
+            }`, validSalt, validHash, validEncSymkey),
             ExpectedStatusCode: 409,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "User already exist",
             ExpectedData:       nil,
         }, {
             Name:               "UnprocessableUsername",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"fishy user |._.|><|",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
-            }`,
+                "salt":"%s",
+                "hash":"%s",
+                "enc_symkey":"%s"
+            }`, validSalt, validHash, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'fishy user |._.|><|'",
             ExpectedError:      "Invalid input format: username: contains invalid characters",
             ExpectedData:       nil,
         }, {
             Name:               "UnprocessableSalt",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
                 "salt":"344feecf40d261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
-            }`,
+                "hash":"%s",
+                "enc_symkey":"%s"
+            }`, validHash, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: salt: length must be exactly 64 char long",
             ExpectedData:       nil,
         }, {
             Name:               "UnprocessableHash",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+                "salt":"%s",
                 "hash":"^c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
-                "enc_symkey":"0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
-            }`,
+                "enc_symkey":"%s"
+            }`, validSalt, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: hash: contains invalid characters",
             ExpectedData:       nil,
         }, {
             Name:               "UnprocessableEncSymkey",
-            Body:               `{
+            Body:               fmt.Sprintf(`{
                 "username":"test_user_endpoint1",
-                "salt":"344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
-                "hash":"0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+                "salt":"%s",
+                "hash":"%s",
                 "enc_symkey":""
-            }`,
+            }`, validSalt, validHash),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: enc_symkey: length must be exactly 120 char long",
@@ -198,15 +203,6 @@ func TestCreateUserEndpoint(t *testing.T){
         },
     }
 
-    connStr, err := getPostgresConnStr()
-    if err != nil {
-        t.Fatalf("Failed to get conn string: %v", err)
-    }
-    db, err := sql.Open("postgres", connStr)//db
-    if err != nil {
-        t.Fatalf("Failed to open DB: %v", err)
-    }
-    defer db.Close()
     // Iterate
     for _, tc := range tests {
         t.Run(tc.Name, func(t *testing.T) {
@@ -221,5 +217,76 @@ func TestCreateUserEndpoint(t *testing.T){
     }
 }
 //}}} CreateUserEndpoint
+
+
+//{{{ ReadUserEndpoint
+func Test_ReadUserEndpoint(t *testing.T){
+    // Create some user that will be fetched
+    username := "test_user_read_user1"
+    user := smodels.User{
+        Username:   username,
+        Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+        Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+    }
+    _, err := cruduser.InsertUser(db, user)
+    if err != nil {
+        t.Fatalf("Failed to create user that will be read/fetch-ed: %v", err)
+    }
+
+    // Define tests and its expected results
+    tests := []EndpointTestCase{
+        {
+            Name:               "ReadUser",
+            Body:               fmt.Sprintf(`{"username":"%s"}`, username),
+            ExpectedStatusCode: 200,
+            ExpectedMessage:    fmt.Sprintf("Success: read user '%s'", username),
+            ExpectedError:      "",
+            ExpectedData:       map[string]any{
+                "username":username,
+                "salt":user.Salt,
+                "hash":user.Hash,
+                "enc_symkey":user.EncSymkey,
+            },
+        },{
+            Name:               "MalformedJSON",
+            Body:               fmt.Sprintf(`{"username":"%s`, username),
+            ExpectedStatusCode: 400,
+            ExpectedMessage:    "Fail: read user ''",
+            ExpectedError:      "Invalid JSON",
+            ExpectedData:       nil,
+        },{
+            Name:               "NotFound",
+            Body:               `{"username":"not_found"}`,
+            ExpectedStatusCode: 404,
+            ExpectedMessage:    "Fail: read user 'not_found'",
+            ExpectedError:      "User not found, dosen't exist",
+            ExpectedData:       nil,
+        },{
+            Name:               "UnprocessableUsername",
+            Body:               `{"username":"fishy user |._.|><|"}`,
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: read user 'fishy user |._.|><|'",
+            ExpectedError:      "Invalid input format: username: contains invalid characters",
+            ExpectedData:       nil,
+        },
+    }
+
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.Name, func(t *testing.T) {
+            // Create req, resp
+            req := httptest.NewRequest("POST", "/read/user", strings.NewReader(tc.Body))
+            resp := httptest.NewRecorder()
+            // Call endpoint
+            cruduser.ReadUserEndpoint(resp, req, db)
+            // Check
+            assertResponse(t, resp, tc)
+        })
+    }
+}
+
+//}}} ReadUserEndpoint
+
 
 

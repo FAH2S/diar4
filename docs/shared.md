@@ -5,12 +5,14 @@ Creates new connection to database from environment variables.<br>
 
 Requirements:
 - `DB_USER, DB_PWD, DB_HOST, DB_PORT, DB_NAME` must be set as non empty string.
-- function: [`buildConnStrFromEnv()`](share.md#function-buildconnstrfromenvfn)
-- sql.Open<br>
+- function: [`buildConnStrFromEnvFn()`](shared.md#function-buildconnstrfromenvfn)
+- `sql.Open()`
+- `sql.Ping()`<br>
 
 Logic:
-- Call buildCononStrFromEnvFn() to create connection string
-- Call sql.Open to create DB connection
+- Call `buildCononStrFromEnvFn()` to create connection string
+- Call `sql.Open()` to create DB connection
+- Check sql connection via `sql.Ping()`
 - Return connection or error<br>
 
 Returns:
@@ -18,7 +20,7 @@ Returns:
 - `error`:      if any variable is missing or `sql.open` fails<br><br>
 
 
-### Function: `buildConnStrFromEnvFn()`
+### Function: `buildConnStrFromEnvFn() (string, error)`
 Builds connection string from environment variables.<br>
 
 Logic:
@@ -30,8 +32,8 @@ Returns:
 - `error`:  if any variable is missing or `""` empty string<br><br>
 
 
-### Function: `HandlePgError(err error) (int, error)`
-Maps postgres error codes to http codes<br>
+### Function: `HandlePgErrorFn(table string, err error) (int, error)`
+Maps postgres error codes to http codes, table for example `user`<br>
 
 Logic:
 - Switch case that maps pg error code to http status code
@@ -42,8 +44,20 @@ Returns:
 - `error`:  if execution wasn't successful + explantion why<br><br>
 
 
-### Function: `CheckRowsAffectedInsert(result sql.Result) error`
-Check if rows affected is not zero<br>
+### Wrapper: `HandleSelectErrorFn(err error) (int, error)`
+Check if query returned no rows or failed to execute.<br>
+
+Logic:
+- Check for `sql.ErrNoRows()`
+- Check for errors<br>
+
+Returns:
+- `int`:    http status code
+- `error`:  if query wasn't executed + reason why<br><br>
+
+
+### Function: `CheckRowsAffectedInsertFn(result sql.Result) error`
+Check if rows affected is different from exactly one !=1<br>
 
 Returns:
 - `error`:  if unexpcted number of rows affected<br><br>
@@ -57,7 +71,7 @@ Returns:
 struct for user with validate function.<br><br>
 
 
-### Function: `isValidUsernameFn(username string) error`
+### Function: `IsValidUsernameFn(username string) error`
 checks if username is correct lenght and dosen't have illegal chars<br>
 
 Returns:
@@ -76,15 +90,53 @@ checks if instance is valid.<br>
 
 Requirements:
 - instance: [`User`](shared.md#struct-user)
-- function: [`isValidUsernameFn()`](shared.md#function-isvalidusernamefnusername-string-error)
+- function: [`IsValidUsernameFn()`](shared.md#function-isvalidusernamefnusername-string-error)
 - function: [`isValidHexStringFn()`](shared.md#function-isvalidhexstringfnhexstr-string-hexstrname-string-length-int-error)<br>
 
 Logic:
-- Call isValidusernameFn()
-- Call isValidHexStringFn() for `salt`, `hash`, `enc_symkey`<br>
+- Call `isValidusernameFn()`
+- Call `isValidHexStringFn()` for `salt`, `hash`, `enc_symkey`<br>
 
 Returns:
 - `error`: if dosen't meet requirements + explanation why<br><br>
 <!-- }}} userModel -->
 <!-- }}} Models -->
+
+
+## API
+<!-- {{{ API -->
+<!-- {{{ functions -->
+### Function: `ExtractJSONValueFn(r *http.Request, key string, target interface{}) error`
+Extracts value via key from JSON-encoded request body.<br>
+
+Requirements:
+- `encoding/json`<br>
+
+Returns:
+- `error`: if failed to parse request and extract value<br>
+
+Side effects: if successful update target (with value)<br><br>
+<!-- }}} functions -->
+
+
+<!-- {{{ response -->
+#TODO: update it
+### Struct: `APIResponse`
+struct for writing API response<br><br>
+
+
+### Function: `WriteJSONResponseFn(w http.ResponseWrite, statusCode int, message string, errMsg string, data interface{})`
+Writes uniformed API response based on give args
+
+Requirements:
+- `encoding/json`
+- `net/http`<br>
+
+Logic:
+- Set Header: Content-Type: application/json
+- Create `APIResponse` struct
+- Encode it to JSON<br><br>
+<!-- }}} response -->
+<!-- }}} API -->
+
 

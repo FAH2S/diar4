@@ -8,8 +8,9 @@ import (
     "github.com/lib/pq"
 )
 
-func buildConnStrFromEnv() (string, error) {
-    const fn = "buildConnStrFromEnv"
+
+func buildConnStrFromEnvFn() (string, error) {
+    const fn = "buildConnStrFromEnvFn"
     keys := []string{"DB_USER", "DB_PWD", "DB_HOST", "DB_PORT", "DB_NAME"}
     values := make(map[string]string)
 
@@ -36,14 +37,36 @@ func buildConnStrFromEnv() (string, error) {
 }
 
 
-func HandlePgError(err error) (int, error) {
-    fn := "HandlePgError"
+func GetConn() (*sql.DB, error) {
+    const wrap = "GetConn"
+    // Get conn string from env
+    connStr, err := buildConnStrFromEnvFn()
+    if err != nil {
+        return nil, fmt.Errorf("%s: %w", wrap, err)
+    }
+    // Open sql conn
+    db, err := sql.Open("postgres", connStr)
+    if err != nil {
+        return nil, fmt.Errorf("%s: failed to open DB: %w", wrap, err)
+    }
+    // Check sql conn
+    err = db.Ping()
+    if err != nil {
+        db.Close()
+        return nil, fmt.Errorf("%s: failed to ping DB: %w", wrap, err)
+    }
+    return db, nil
+}
+
+
+func HandlePgErrorFn(table string, err error) (int, error) {
+    fn := "HandlePgErrorFn"
     if pqErr, ok := err.(*pq.Error); ok {
         switch pqErr.Code {
         case "23505":// User already exist/conflict
-            return 409, fmt.Errorf("%s: user already exists: %w", fn, err)
+            return 409, fmt.Errorf("%s: %s already exists: %w", fn, table, err)
         case "23514":// Invalid data/format
-            return 422, fmt.Errorf("%s: invalid user data/format: %w", fn, err)
+            return 422, fmt.Errorf("%s: invalid %s data/format: %w", fn, table, err)
         case "42703":
             return 400, fmt.Errorf("%s: unknown column used: %w", fn, err)
         default: // Failed to execute query
@@ -54,8 +77,20 @@ func HandlePgError(err error) (int, error) {
 }
 
 
-func CheckRowsAffectedInsert(result sql.Result) error {
-    fn := "CheckRowsAffectedInsert"
+func HandleSelectErrorFn(err error) (int, error) {
+    fn := "HandleSelectErrorFn"
+    if err == sql.ErrNoRows {
+        return 404, fmt.Errorf("%s: user not found/dosen't exist", fn)
+    }
+    if err != nil {
+        return 500, fmt.Errorf("%s: failed to execute query: %w", fn, err)
+    }
+    return 200, nil
+}
+
+
+func CheckRowsAffectedInsertFn(result sql.Result) error {
+    fn := "CheckRowsAffectedInsertFn"
     rows, err := result.RowsAffected()
     if err != nil {
         return fmt.Errorf("%s: failed to check rows affected: %w", fn, err)

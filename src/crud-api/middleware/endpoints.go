@@ -25,7 +25,7 @@ func ValidateMethodAndType(w http.ResponseWriter, r *http.Request) bool {
     const fn = "Middleware ValidateMethodAndType"
     ip := r.RemoteAddr
     if !isMethodPOSTFn(r){
-        sapi.WriteJSONResponse(
+        sapi.WriteJSONResponseFn(
             w,
             400,
             fmt.Sprintf("Fail: process '%s'", r.URL.Path),
@@ -37,7 +37,7 @@ func ValidateMethodAndType(w http.ResponseWriter, r *http.Request) bool {
     }
     // Check content type
     if !isHeaderCTAJFn(r){
-        sapi.WriteJSONResponse(
+        sapi.WriteJSONResponseFn(
             w,
             400,
             fmt.Sprintf("Fail: process '%s'", r.URL.Path),
@@ -60,3 +60,5 @@ func ValidateMethodAndTypeEndpoint(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
+
+

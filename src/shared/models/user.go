@@ -21,7 +21,7 @@ type User struct {
 }
 
 
-func isValidUsernameFn(username string) error {
+func IsValidUsernameFn(username string) error {
     // check username, 2 > len > 31, letters + numbers + '_'
     if len(username) < 3 || len(username) > 30 {
         return fmt.Errorf("username: length must be between 3 and 30 char long")
@@ -45,7 +45,7 @@ func isValidHexStringFn(hexStr string, hexStrName string, length int) error {
 
 
 func (user *User) Validate() error {
-    if err := isValidUsernameFn(user.Username); err != nil {
+    if err := IsValidUsernameFn(user.Username); err != nil {
         return err
     }
     if err := isValidHexStringFn(user.Salt, "salt", 64); err != nil {

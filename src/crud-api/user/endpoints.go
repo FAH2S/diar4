@@ -12,54 +12,100 @@ import (
 )
 
 
+
+//{{{ Create user endpoint
 func CreateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     var (
-        fn          = "CreateUserEndpoint"
-        user        = smodels.User{}
+        wrap        = "CreateUserEndpoint"
+        // Input
+        user        smodels.User
+        // Response info
         statusCode  = 500
         message     = "Fail: create user ''"
-        errMessage  = "Unknown error occured"
+        errMessage  = "Unknown error occurred"
         ip          = r.RemoteAddr
+        success     = false
     )
-    // Extract packet as user type/model
-    err := json.NewDecoder(r.Body).Decode(&user)
-    if err != nil {
-        log.Printf("%s: %v | status: %d | IP: %s", fn, err, 400, ip)
+
+    // Helper fn, logs result and writes JSON response
+    respond := func(err error) {
+        if success {
+            log.Printf("%s: %s | status: %d | IP: %s", wrap, message, statusCode, ip)
+        } else {
+            log.Printf("%s: %v | status: %d | IP: %s", wrap, err, statusCode, ip)
+        }
+        sapi.WriteJSONResponseFn(w, statusCode, message, errMessage, nil)
+    }
+
+    // Decode request body into user model
+    err := json.NewDecoder(r.Body).Decode(&user); if err != nil {
+        statusCode = 400
         errMessage = "Invalid JSON"
-        sapi.WriteJSONResponse(w, 400, message, errMessage, nil)
-        return
+        respond(err); return
     }
-    // Validate extracted user
-    err = user.Validate()
-    if err != nil {
-        log.Printf("%s: user.Validate: %v | status: %d | IP: %s", fn, err, 422, ip)
+
+    // Validate user model fields
+    err = user.Validate(); if err != nil {
+        statusCode = 422
         message = fmt.Sprintf("Fail: create user '%s'", user.Username)
         errMessage = fmt.Sprintf("Invalid input format: %v", err)
-        sapi.WriteJSONResponse(w, 422, message, errMessage, nil)
-        return
+        respond(err); return
     }
-    // Insert user
+
+    // Attempt to insert user
     statusCode, err = InsertUser(db, user)
-    switch statusCode {
-    case 201:
-        message = fmt.Sprintf("Success: create user '%s'", user.Username)
-        errMessage = ""
-    case 409:
-        message = fmt.Sprintf("Fail: create user '%s'", user.Username)
-        errMessage = "User already exist"
-    case 422:
-        message = fmt.Sprintf("Fail: create user '%s'", user.Username)
-        errMessage = fmt.Sprintf("Invalid input format: %v", err)
-    case 500:
-        errMessage = "Internal server error"
-    default:
-        log.Printf("%s: Unknown error occured: %v", fn, err)
-    }
-    if statusCode == 201 {
-        log.Printf("%s: %s | status: %d | IP: %s", fn, message, statusCode, ip)
-    } else {
-        log.Printf("%s: %v | status: %d | IP: %s", fn, err, statusCode, ip)
-    }
-    sapi.WriteJSONResponse(w, statusCode, message, errMessage, nil)
-    return
+    message, errMessage, success = sapi.MapStatusCodeFn(statusCode, "create", "user", user.Username, err)
+    respond(err); return
 }
+//}}} Create user endpoint
+
+
+//{{{ Read user endpoint
+func ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+    var (
+        wrap        = "ReadUserEndpoint"
+        // Input
+        username    = ""
+        // Response info
+        statusCode  = 500
+        message     = "Fail: read user ''"
+        errMessage  = "Unknown error occured"
+        user        *smodels.User
+        ip          = r.RemoteAddr
+        success     = false
+    )
+
+    // Helper fn, logs result and writes JSON response
+    respond := func(err error) {
+        if success {
+            log.Printf("%s: %s | status: %d | IP: %s", wrap, message, statusCode, ip)
+        } else {
+            log.Printf("%s: %v | status: %d | IP: %s", wrap, err, statusCode, ip)
+        }
+        sapi.WriteJSONResponseFn(w, statusCode, message, errMessage, user)
+    }
+
+    // Extract username from request body
+    err := sapi.ExtractJSONValueFn(r, "username", &username); if err != nil {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+
+    // Validate extracted username
+    err = smodels.IsValidUsernameFn(username)
+    if err != nil {
+        statusCode = 422
+        message = fmt.Sprintf("Fail: read user '%s'", username)
+        errMessage = fmt.Sprintf("Invalid input format: %v", err)
+        respond(err); return
+    }
+
+    // Attempt to select(fetch) user
+    statusCode, user, err = SelectUser(db, username)
+    message, errMessage, success = sapi.MapStatusCodeFn(statusCode, "read", "user", username, err)
+    respond(err); return
+}
+//}}} Read user endpoint
+
+
