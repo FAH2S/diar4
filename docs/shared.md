@@ -42,8 +42,21 @@ Returns:
 - `error`:  if execution wasn't successful + explantion why<br><br>
 
 
+### Wrapper: `HandleSelectError(err error, fn string) (int, error) {
+Check if quert returned no rows or failed to execute.<br>
+
+Logic:
+- Check for `sql.ErrNoRows`
+- Check `if err != nil`<br>
+
+Returns:
+- `int`:    http status code
+- `error`:  if query wasn't executed + reason why<br><br>
+
+
 ### Function: `CheckRowsAffectedInsert(result sql.Result) error`
-Check if rows affected is not zero<br>
+Check if rows affected is different from exactly one !=1<br><br>
+
 
 Returns:
 - `error`:  if unexpcted number of rows affected<br><br>

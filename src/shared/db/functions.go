@@ -54,6 +54,18 @@ func HandlePgError(err error) (int, error) {
 }
 
 
+func HandleSelectError(err error) (int, error) {
+    fn := "HandleSelectError"
+    if err == sql.ErrNoRows {
+        return 404, nil
+    }
+    if err != nil {
+        return 500, fmt.Errorf("%s: failed to execute query: %w", fn, err)
+    }
+    return 200, nil
+}
+
+
 func CheckRowsAffectedInsert(result sql.Result) error {
     fn := "CheckRowsAffectedInsert"
     rows, err := result.RowsAffected()
