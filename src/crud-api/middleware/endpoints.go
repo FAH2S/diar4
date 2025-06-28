@@ -60,3 +60,5 @@ func ValidateMethodAndTypeEndpoint(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
+
+

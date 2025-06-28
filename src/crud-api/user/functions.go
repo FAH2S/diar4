@@ -32,3 +32,28 @@ func InsertUser(db *sql.DB, user smodels.User) (int, error) {
 }
 
 
+func SelectUser(db *sql.DB, username string) (int, smodels.User, error) {
+    fn := "SelectUser"
+    // Create query
+    query := `
+        SELECT username, salt, hash, enc_symkey FROM users
+        WHERE username = $1 LIMIT 1;
+    `
+    // Create user instance
+    var user smodels.User
+    // Query row inser + Scan load result into user
+    err := db.QueryRow(query, username).Scan(
+        &user.Username,
+        &user.Salt,
+        &user.Hash,
+        &user.EncSymkey,
+    )
+    // Check for errors 404, 500, otherwise 200
+    statusCode, err := sdb.HandleSelectError(err)
+    if err != nil {
+        err = fmt.Errorf("%s: %w", fn, err)
+    }
+    return statusCode, user, err
+}
+
+

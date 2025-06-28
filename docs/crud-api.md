@@ -58,6 +58,7 @@ Check if it contains header `Content-Type: application/json`
 
 ## Users
 <!-- {{{ Users -->
+<!-- {{{ CREATE User -->
 POST /create/user<br>
 Headers:
 ```
@@ -74,8 +75,8 @@ Body:
     }
 ```
 
-## API Responses
 <!-- {{{ Responses: 201, 400, 409, 422, 500 -->
+## API Responses
 > `username` might be ommited if no username provided or wrong content-type
 
     201 Created
@@ -119,8 +120,8 @@ Body:
     }
 ```
 <!-- Response }}} -->
-## Flow
 <!-- {{{ Flow -->
+## Flow
 ## Endpoint
 ### Wrapper: `CreateUserEndpoint(w http.ResonseWriter, r *http.Request, db *sql.DB)`
 Accept package, convert to user model, insert to DB.<br>
@@ -160,11 +161,99 @@ Logic:
 
 Returns:
 - `int`:    http status code
-- `error`:  if execustion wasn't successful + explanation why<br>
+- `error`:  if execution wasn't successful + explanation why<br>
 
 Side effects:
 Change DB, if successful insert user<br><br>
 <!-- Flow }}} -->
+<!-- }}}CREATE User -->
+
+<!-- {{{ READ User -->
+POST /read/user<br>
+Headers:
+```
+    Content-Type: application/json
+```
+Body:
+```
+    {
+        "username":     string  (required, mina_len: 3, max_len: 30,
+                                pattern: ^[a-zA-Z0-9_]+$)
+    }
+```
+<!-- {{{ Responses: 200, 400, 404, 422, 500 -->
+## API Responses
+    200 OK
+```
+    {
+        "message":  "Success: read user '{username}'",
+        "error":    nil,
+        "data":     {JSON map of User model},
+    }
+```
+    400 Bad Request
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "Invalid JSON",
+        "data":     nil,
+    }
+```
+    404 Not Found
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "User not found, dosen't exist",
+        "data":     nil,
+    }
+```
+    422 Unprocessable Entity
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "Invalid input format: username: [reason what is wrong]",
+        "data":     nil,
+    }
+```
+    500 Internal Server Error
+```
+    {
+        "message":  "Fail: read user '{username}'",
+        "error":    "Unknown error occured", "Internal server error"
+        "data":     nil,
+    }
+```
+<!-- }}} Responses: 200, 400, 404, 422, 500 -->
+<!-- {{{ Flow -->
+## Flow
+## Endpoint
+### Wrapper: `ReadUserEndpoint()`
+### Wrapper: `SelectUser(db *sql.DB, username string) (int, models.User, error)`
+Create query to select/fetch user from database, check, selection result<br>
+
+Requirements:
+- pointer to sql.DB instance
+- instance: [`User`](shared.md#struct-user) from shared/models
+- wrapper: [`HandleSelectError()`](shared.md#wrapper-handleselecterrorerr-error-fn-string-int-error) from shared/models<br>
+
+Logic:
+- Create sql query
+- Create user instance
+- Call `db.QueryRow`, then via `.Scan` load result into `user` instance
+- Call `HandleSelectError` <br>
+
+Returns:
+- `int`:            http status code
+- `models.User`:    instance of selected/fetched user
+- `erorr`:          if execution wasn't successful + explanation why<br>
+<!-- }}} Flow -->
+<!-- }}} READ User -->
+
+<!-- {{{ UPDATE User -->
+<!-- }}} UPDATE User -->
+
+<!-- {{{ DELETE User -->
+<!-- }}} DELETE User -->
 <!-- Users }}} -->
 
 
