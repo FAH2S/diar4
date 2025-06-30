@@ -123,12 +123,13 @@ Body:
 <!-- {{{ Flow -->
 ## Flow
 ## Endpoint
-### Wrapper: `CreateUserEndpoint(w http.ResonseWriter, r *http.Request, db *sql.DB)`
+### Wrapper: `CreateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
 Accept package, convert to user model, insert to DB.<br>
 
 Requirements:
 - pointer to sql.DB instance
 - function: [`Validate`](shared.md#wrapper-validate-error) from shared/models
+- wrapper:  [`InsertUser`](#wrapper-insertuserdb-sqldb-user-modelsuser-int-error)
 - function: [`APIResponseWriter`]() from shared/API //TODO: dosen't exist yet<br>
 
 Logic:
@@ -167,6 +168,7 @@ Side effects:
 Change DB, if successful insert user<br><br>
 <!-- Flow }}} -->
 <!-- }}}CREATE User -->
+
 
 <!-- {{{ READ User -->
 POST /read/user<br>
@@ -227,7 +229,22 @@ Body:
 <!-- {{{ Flow -->
 ## Flow
 ## Endpoint
-### Wrapper: `ReadUserEndpoint()`
+### Wrapper: `ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
+Accept package, checks if username is valid, fetches from DB.<br>
+
+Requirements:
+- pointer to sql.DB instance
+- function: [`IsValidUsernameFn`](shared.md#function-isvalidusernamefnusername-string-error) from shared/models
+- wrapper:  [`SelectUser`](#wrapper-selectuserdb-sqldb-username-string-int-modelsuser-error)
+- function: [`APIResponseWriter`]() from shared/API //TODO: dosen't exist yet<br>
+
+Logic:
+- Extract username from JSON //TODO: from sapi link
+- Call `IsValidUsernameFn`
+- Call `SelectUser`
+- return APIResponse //TODO: need lin to it<br><br>
+
+
 ### Wrapper: `SelectUser(db *sql.DB, username string) (int, models.User, error)`
 Create query to select/fetch user from database, check, selection result<br>
 
@@ -245,12 +262,14 @@ Logic:
 Returns:
 - `int`:            http status code
 - `models.User`:    instance of selected/fetched user
-- `erorr`:          if execution wasn't successful + explanation why<br>
+- `erorr`:          if execution wasn't successful + explanation why<br><br>
 <!-- }}} Flow -->
 <!-- }}} READ User -->
 
+
 <!-- {{{ UPDATE User -->
 <!-- }}} UPDATE User -->
+
 
 <!-- {{{ DELETE User -->
 <!-- }}} DELETE User -->

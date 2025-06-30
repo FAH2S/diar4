@@ -6,8 +6,8 @@ import (
 )
 
 
-func ExtractJSONValue(r *http.Request, key string, target interface{}) error {
-    fn := "ExtractJSONValue"
+func ExtractJSONValueFn(r *http.Request, key string, target interface{}) error {
+    fn := "ExtractJSONValueFn"
     var raw map[string]json.RawMessage
     if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
         return fmt.Errorf("%s: Invalid JSON: %w", fn, err)

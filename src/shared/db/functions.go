@@ -8,8 +8,8 @@ import (
     "github.com/lib/pq"
 )
 
-func buildConnStrFromEnv() (string, error) {
-    const fn = "buildConnStrFromEnv"
+func buildConnStrFromEnvFn() (string, error) {
+    const fn = "buildConnStrFromEnvFn"
     keys := []string{"DB_USER", "DB_PWD", "DB_HOST", "DB_PORT", "DB_NAME"}
     values := make(map[string]string)
 
@@ -36,8 +36,8 @@ func buildConnStrFromEnv() (string, error) {
 }
 
 
-func HandlePgError(err error) (int, error) {
-    fn := "HandlePgError"
+func HandlePgErrorFn(err error) (int, error) {
+    fn := "HandlePgErrorFn"
     if pqErr, ok := err.(*pq.Error); ok {
         switch pqErr.Code {
         case "23505":// User already exist/conflict
@@ -54,8 +54,8 @@ func HandlePgError(err error) (int, error) {
 }
 
 
-func HandleSelectError(err error) (int, error) {
-    fn := "HandleSelectError"
+func HandleSelectErrorFn(err error) (int, error) {
+    fn := "HandleSelectErrorFn"
     if err == sql.ErrNoRows {
         return 404, nil
     }
@@ -66,8 +66,8 @@ func HandleSelectError(err error) (int, error) {
 }
 
 
-func CheckRowsAffectedInsert(result sql.Result) error {
-    fn := "CheckRowsAffectedInsert"
+func CheckRowsAffectedInsertFn(result sql.Result) error {
+    fn := "CheckRowsAffectedInsertFn"
     rows, err := result.RowsAffected()
     if err != nil {
         return fmt.Errorf("%s: failed to check rows affected: %w", fn, err)
