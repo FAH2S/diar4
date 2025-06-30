@@ -1,12 +1,12 @@
 package sharedapi
 import (
     "encoding/json"
-    "io"
+    "net/http"
     "fmt"
 )
 
 
-func ExtractJSONValue(r io.Reader, key string, target interface{}) error {
+func ExtractJSONValue(r *http.Request, key string, target interface{}) error {
     fn := "ExtractJSONValue"
     var raw map[string]json.RawMessage
     if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
