@@ -62,7 +62,7 @@ func Test_UserModel_Username_Fail(t *testing.T) {
 
     for _, tc := range tests {
         t.Run(tc.name, func(t *testing.T) {
-            actual := isValidUsernameFn(tc.username)
+            actual := IsValidUsernameFn(tc.username)
             if actual == nil || actual.Error() != tc.expected {
                 t.Errorf("\nExpected:\t%q\nGot:\t%q", tc.expected, actual)
             }
