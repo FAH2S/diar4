@@ -36,14 +36,14 @@ func buildConnStrFromEnvFn() (string, error) {
 }
 
 
-func HandlePgErrorFn(err error) (int, error) {
+func HandlePgErrorFn(table string, err error) (int, error) {
     fn := "HandlePgErrorFn"
     if pqErr, ok := err.(*pq.Error); ok {
         switch pqErr.Code {
         case "23505":// User already exist/conflict
-            return 409, fmt.Errorf("%s: user already exists: %w", fn, err)
+            return 409, fmt.Errorf("%s: %s already exists: %w", fn, table, err)
         case "23514":// Invalid data/format
-            return 422, fmt.Errorf("%s: invalid user data/format: %w", fn, err)
+            return 422, fmt.Errorf("%s: invalid %s data/format: %w", fn, table, err)
         case "42703":
             return 400, fmt.Errorf("%s: unknown column used: %w", fn, err)
         default: // Failed to execute query

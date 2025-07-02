@@ -7,7 +7,6 @@ import (
 )
 
 
-// succ, fail, incossistent data (empty and nil)
 func TestWriteJSONResponseFn(t *testing.T) {
     tests := []struct {
         name        string

@@ -65,7 +65,7 @@ func Test_ExtractJSONValueFn(t *testing.T) {
             }
             // Compare targets only if no errors
             if err == nil {
-                // makes `got` type interface but with value is [string]
+                // makes `got` type interface but with value [string]
                 got := reflect.ValueOf(tc.target).Elem().Interface()
                 if !reflect.DeepEqual(got, tc.expectedTarget) {
                     t.Fatalf("\nExpected:\t%v\nGot:\t\t%v", tc.expectedTarget, got)
