@@ -20,11 +20,11 @@ func InsertUser(db *sql.DB, user smodels.User) (int, error) {
     result, err := db.Exec(query, user.Username, user.Salt, user.Hash, user.EncSymkey)
     // Map error codes to status codes
     if err != nil {
-        statusCode, err := sdb.HandlePgError(err)
+        statusCode, err := sdb.HandlePgErrorFn("user", err)
         return statusCode, fmt.Errorf("%s: %w", fn, err)
     }
     // Check rows affected
-    if err = sdb.CheckRowsAffectedInsert(result); err != nil {
+    if err = sdb.CheckRowsAffectedInsertFn(result); err != nil {
         return 500, fmt.Errorf("%s: %w", fn, err)
     }
 
@@ -49,7 +49,7 @@ func SelectUser(db *sql.DB, username string) (int, smodels.User, error) {
         &user.EncSymkey,
     )
     // Check for errors 404, 500, otherwise 200
-    statusCode, err := sdb.HandleSelectError(err)
+    statusCode, err := sdb.HandleSelectErrorFn(err)
     if err != nil {
         err = fmt.Errorf("%s: %w", fn, err)
     }

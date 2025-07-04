@@ -1,7 +1,6 @@
 package integration
 import (
     "testing"
-    "database/sql"
     "encoding/json"
     "net/http"
     "net/http/httptest"
@@ -198,15 +197,6 @@ func TestCreateUserEndpoint(t *testing.T){
         },
     }
 
-    connStr, err := getPostgresConnStr()
-    if err != nil {
-        t.Fatalf("Failed to get conn string: %v", err)
-    }
-    db, err := sql.Open("postgres", connStr)//db
-    if err != nil {
-        t.Fatalf("Failed to open DB: %v", err)
-    }
-    defer db.Close()
     // Iterate
     for _, tc := range tests {
         t.Run(tc.Name, func(t *testing.T) {

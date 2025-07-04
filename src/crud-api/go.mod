@@ -5,9 +5,9 @@ go 1.23.0
 toolchain go1.23.10
 
 require (
-	github.com/FAH2S/diar4/src/shared/api v0.0.0-20250628141701-86f51d2a0eb4
-	github.com/FAH2S/diar4/src/shared/db v0.0.0-20250628141701-86f51d2a0eb4
-	github.com/FAH2S/diar4/src/shared/models v0.0.0-20250620163115-75ff5a236fea
+	github.com/FAH2S/diar4/src/shared/api v0.0.0-20250630144900-6886d9d6e518
+	github.com/FAH2S/diar4/src/shared/db v0.0.0-20250704160238-aaf0838f8c67
+	github.com/FAH2S/diar4/src/shared/models v0.0.0-20250630144218-0e30d1496a94
 	github.com/lib/pq v1.10.9
 	github.com/testcontainers/testcontainers-go v0.37.0
 )

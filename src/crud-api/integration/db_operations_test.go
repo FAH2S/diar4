@@ -1,7 +1,6 @@
 package integration
 import (
     "testing"
-    "database/sql"
     "errors"
     "strings"
 )
@@ -14,16 +13,6 @@ import (
 
 //{{{ Insert user
 func TestInsertUser(t *testing.T) {
-    connStr, err := getPostgresConnStr()
-    if err != nil {
-        t.Fatal("Failed to get conn string: %w", err)
-    }
-    db, err := sql.Open("postgres", connStr)
-    if err != nil {
-        t.Fatal("Failed to open DB:", err)
-    }
-    defer db.Close()
-
     tests := []struct {
         name                string
         user                smodels.User
@@ -105,16 +94,6 @@ func TestInsertUser(t *testing.T) {
 
 //{{{ Select user
 func TestSelectUser(t *testing.T) {
-    connStr, err := getPostgresConnStr()
-    if err != nil {
-        t.Fatal("Failed to get conn string: %w", err)
-    }
-    db, err := sql.Open("postgres", connStr)
-    if err != nil {
-        t.Fatal("Failed to open DB:", err)
-    }
-    defer db.Close()
-
     tests := []struct {
         name                string
         username            string
@@ -157,7 +136,7 @@ func TestSelectUser(t *testing.T) {
                 t.Errorf("\nExpected to contain:\t%q\nGot:\t\t\t%q", tc.expectedError, err)
             }
             if tc.expectedData != user {
-                t.Errorf("\nExpected data not same\nWant:\t%v\nGot:\t%v", tc.expectedData, user)
+                t.Errorf("\nExpected data not same\nWant:\t%+v\nGot:\t%+v", tc.expectedData, user)
             }
         })
     }
