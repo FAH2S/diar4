@@ -8,6 +8,7 @@ import (
     "github.com/lib/pq"
 )
 
+
 func buildConnStrFromEnvFn() (string, error) {
     const fn = "buildConnStrFromEnvFn"
     keys := []string{"DB_USER", "DB_PWD", "DB_HOST", "DB_PORT", "DB_NAME"}
@@ -33,6 +34,27 @@ func buildConnStrFromEnvFn() (string, error) {
     )
     //fmt.Println(connStr)
     return connStr, nil
+}
+
+
+func GetConn() (*sql.DB, error) {
+    const wrap = "GetConn"
+    // Get conn string from env
+    connStr, err := buildConnStrFromEnvFn()
+    if err != nil {
+        return nil, fmt.Errorf("%s: %w", wrap, err)
+    // Open sql conn
+    db, err := sql.Open("postgres", connStr)
+    if err != nil {
+        return nil, fmt.Errorf("%s: failed to open DB: %w", wrap, err)
+    }
+    // Check sql conn
+    err = db.Ping()
+    if err != nil {
+        db.Close()
+        return nil, fmt.Errof("%s: failed to ping DB: %w", wrap, err)
+    }
+    return db, nil
 }
 
 

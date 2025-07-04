@@ -1,25 +1,24 @@
 ## DB
 <!-- {{{ DB -->
-    ------------------<br>
-    THIS DOSE NOT EXIST<br>
 ### Wrapper: `db.GetConn() (*sql.DB, error)`
 Creates new connection to database from environment variables.<br>
 
 Requirements:
 - `DB_USER, DB_PWD, DB_HOST, DB_PORT, DB_NAME` must be set as non empty string.
 - function: [`buildConnStrFromEnvFn()`](shared.md#function-buildconnstrfromenvfn)
-- sql.Open<br>
+- sql.Open
+- sql.Ping<br>
 
 Logic:
 - Call buildCononStrFromEnvFn() to create connection string
 - Call sql.Open to create DB connection
+- Check sql connection via sql.Ping
 - Return connection or error<br>
 
 Returns:
 - `*sql.db`:    pointer to db connection
 - `error`:      if any variable is missing or `sql.open` fails<br><br>
-    THIS DOSE NOT EXIST<br>
-    ------------------<br><br>
+
 
 ### Function: `buildConnStrFromEnvFn()`
 Builds connection string from environment variables.<br>
