@@ -43,6 +43,7 @@ func GetConn() (*sql.DB, error) {
     connStr, err := buildConnStrFromEnvFn()
     if err != nil {
         return nil, fmt.Errorf("%s: %w", wrap, err)
+    }
     // Open sql conn
     db, err := sql.Open("postgres", connStr)
     if err != nil {
@@ -52,7 +53,7 @@ func GetConn() (*sql.DB, error) {
     err = db.Ping()
     if err != nil {
         db.Close()
-        return nil, fmt.Errof("%s: failed to ping DB: %w", wrap, err)
+        return nil, fmt.Errorf("%s: failed to ping DB: %w", wrap, err)
     }
     return db, nil
 }
