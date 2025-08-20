@@ -272,6 +272,102 @@ Returns:
 
 
 <!-- {{{ UPDATE User -->
+POST /update/user<br>
+Headers:
+```
+    Content-Type: application/json
+```
+Body:
+```
+    {
+        "username":     string  (required, mina_len: 3, max_len: 30,
+                                pattern: ^[a-zA-Z0-9_]+$)
+        "salt":         string  (optional, hex-string, len:64)
+        "hash":         string  (optional, hex-string, len:64)
+        "enc_symkey":   string  (optional, hex-string, len:120)
+    }
+```
+<!-- {{{ Responses: 200, 400, 404, 422, 500 -->
+## API Responses
+    200 OK
+```
+    {
+        "message":  "Success: update user '{username}'",
+        "error":    nil,
+        "data":     {"username": "{username}"},
+    }
+```
+    400 Bad Request
+```
+    {
+        "message":  "Fail: update user ''",   //Malformed JSON can't process body aka extract username
+        "error":    "Invalid JSON",
+        "data":     nil,
+    }
+```
+    404 Not Found
+```
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "User not found, dosen't exist",
+        "data":     nil,
+    }
+```
+    422 Unprocessable Entity
+```
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "Invalid input format: [column]: [reason what is wrong]",
+        "data":     nil,
+    }
+```
+    500 Internal Server Error
+```
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "Unknown error occured", "Internal server error"
+        "data":     nil,
+    }
+```
+<!-- }}} Responses: 200, 400, 404, 422, 500 -->
+<!-- {{{ Flow -->
+## Flow
+## Endpoint
+TODO: currently ROUGH sketch
+### Wrapper: `ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
+Accept package, checks if data is valid, updates DB.<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+
+Logic:
+- Extracts data from package
+- Validate data (iterate over PRESENT fields then .validate)
+- Call UpdateUser
+- Return API response
+
+Returns:
+- api response [`APIResponse`](shared.md#struct-apiresponse)<br><br>
+
+
+TODO: currently ROUGH sketch
+### Wrapper: `UpdateUser(db *sql.DB, user *models.User) (int, error)`
+Recieves (potenitonally partially empty) user instance, crete query with it, update user<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- instance: [`User`](shared.md#struct-user) from shared/models
+- wrapper: [`HandleSelectErrorFn()`](shared.md#wrapper-handleselecterrorfnerr-error-int-error) from shared/db<br>
+
+Logic:
+- Create sql query
+- Populate query based on present data from User instance (skip empty fields)
+- Call db query<br>
+
+Returns:
+- `int`:            http status code
+- `erorr`:          if execution wasn't successful + explanation why<br><br>
+<!-- }}} Flow -->
 <!-- }}} UPDATE User -->
 
 

@@ -6,6 +6,7 @@ import (
     "strings"
     "errors"
     "database/sql"
+    "reflect"
 )
 import (
     "github.com/lib/pq"
@@ -218,5 +219,65 @@ func Test_CheckRowsAffectedInsertFn(t *testing.T) {
     }
 }
 //}}} CheckRowsAffectedInsert
+
+
+//{{{ BuildSetPartsFn
+func Test_BuildSetPartsFn(t *testing.T) {
+    tests := []struct {
+        name                string
+        inputData           map[string]interface{}
+        expectedSetParts    []string
+        expectedArgs        []interface{}
+        expectedErrSubStr   string
+    }{
+        {
+            name:               "successUpdateUserHash",
+            inputData:          map[string]interface{}{
+                "hash":"hash_string",
+            },
+            expectedSetParts:   []string{"hash = $1"},
+            expectedArgs:       []interface{}{"hash_string"},
+            expectedErrSubStr:  "",
+        }, {
+            name:               "successUpdateUserHashSalt",
+            inputData:          map[string]interface{}{
+                "hash":"hash_string",
+                "salt":"salt_string",
+            },
+            expectedSetParts:   []string{"hash = $1", "salt = $2"},
+            expectedArgs:       []interface{}{"hash_string", "salt_string"},
+            expectedErrSubStr:  "",
+        }, {
+            name:               "failUpdateUser",
+            inputData:          map[string]interface{}{
+            },
+            expectedSetParts:   nil,
+            expectedArgs:       nil,
+            expectedErrSubStr:  "no fields to update",
+        },
+    }
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            setParts, args, err := BuildSetPartsFn(tc.inputData)
+            // Chck setParts
+            if !reflect.DeepEqual(tc.expectedSetParts, setParts) {
+                t.Errorf("Wrong setParts:\nExpected:\t%v\nGot:\t\t%v", tc.expectedSetParts, setParts)
+            }
+
+            // Check args
+            if !reflect.DeepEqual(tc.expectedArgs, args) {
+                t.Errorf("Wrong args:\nExpected:\t%v\nGot:\t\t%v", tc.expectedArgs, args)
+            }
+
+            // Chech error, substring match
+            if tc.expectedErrSubStr != "" && err != nil && !strings.Contains(err.Error(), tc.expectedErrSubStr) {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+        })
+    }
+}
+
+//}}} BuildSetParts
+
 
 

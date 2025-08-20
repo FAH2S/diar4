@@ -58,3 +58,12 @@ func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
 }
 
 
+//TODO: update or make doc about it
+func UpdateUser(db *sql.DB, data map[string]interface{}, user string) (int, error) {
+    wrap := "UpdateUser"
+    //build set parts, return err if empty
+    //create querry with table + where case
+    //Insert to DB
+    //map errors
+    //check
+    //return

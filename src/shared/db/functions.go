@@ -3,6 +3,7 @@ import (
     "os"
     "fmt"
     "database/sql"
+    "sort"
 )
 import (
     "github.com/lib/pq"
@@ -99,6 +100,35 @@ func CheckRowsAffectedInsertFn(result sql.Result) error {
         return fmt.Errorf("%s: expected 1 row affected, got %d", fn, rows)
     }
     return nil
+}
+
+
+//TODO: make docs for it
+func BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, error) {
+    fn := "BuildSetPartsFn"
+    // Check
+    if len(data) == 0 {
+        return nil, nil, fmt.Errorf("%s: no fields to update", fn)
+    }
+
+    // Initialization
+    setParts := []string{}
+    args := []interface{}{}
+    i := 1
+
+    // Deterministic iteration
+    sorted_keys := make([]string, 0, len(data))
+    for k := range data {
+        sorted_keys = append(sorted_keys, k)
+    }
+    sort.Strings(sorted_keys)
+    for _, value := range sorted_keys {
+        setParts = append(setParts, fmt.Sprintf("%s = $%d", value, i))
+        args = append(args, data[value])
+        i++
+    }
+
+    return setParts, args, nil
 }
 
 

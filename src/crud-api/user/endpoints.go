@@ -109,3 +109,17 @@ func ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 //}}} Read user endpoint
 
 
+//{{{ Update user endpoint
+
+// recieve packet
+// parse json to map
+// remove all nonwhiteliseted fields aka not existant in table
+// validate fields ex. if hash present run .isValidX on it for each field
+//      make sure username is present
+// pass data/map to UpdateUserFn
+// return/respond
+
+//}}} Update user endpoint
+
+
+
