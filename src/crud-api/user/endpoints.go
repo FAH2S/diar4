@@ -109,3 +109,77 @@ func ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 //}}} Read user endpoint
 
 
+//{{{ Update user endpoint
+func UpdateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+    var (
+        wrap        = "UpdateUserEndpoint"
+        // Input
+        inputData   map[string]interface{}
+        username    = ""
+        // Response info
+        statusCode  = 500
+        message     = "Fail: update user ''"
+        errMessage  = "Unknown error occurred"
+        returnData  map[string]string
+        ip          = r.RemoteAddr
+        success     = false
+    )
+    // Helper fn, logs result and writes JSON response
+    respond := func(err error) {
+        if success {
+            log.Printf("%s: %s | status: %d | IP: %s", wrap, message, statusCode, ip)
+        } else {
+            log.Printf("%s: %v | status: %d | IP: %s", wrap, err, statusCode, ip)
+        }
+        sapi.WriteJSONResponseFn(w, statusCode, message, errMessage, returnData)
+    }
+
+    // Decode request body into map/dict data
+    err := json.NewDecoder(r.Body).Decode(&inputData); if err != nil {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+
+    // Sanitize data
+    // - remove illegal keys => sapi
+    allowed := []string{"username", "salt", "hash", "enc_symkey"}
+    filterdData := sapi.SanitizeKeysFn(inputData, allowed)
+    // - check each present field via some user validate => smodels
+    err = smodels.ValidateUserMap(filterdData); if err != nil {
+        statusCode = 422
+        errMessage = fmt.Sprintf("Invalid input format: %v", err)
+        respond(err); return
+    }
+    // - username field must be present, validate makes sure its string
+    username, ok := filterdData["username"].(string)
+    if !ok {
+        statusCode = 422
+        errMessage = "Missing required field: 'username'"
+        respond(err); return
+    }
+    // - check for at least 2 fields
+    if len(filterdData) < 2 {
+        statusCode = 422
+        errMessage = "Invalid input: must contain at least 2 fields total"
+        respond(err); return
+    }
+    // - pop username from map
+    delete (filterdData, "username")
+
+
+    // Call UpdateUser
+    statusCode, err = UpdateUser(db, filterdData, username)
+    if statusCode == 200 {
+        returnData = map[string]string{"username":username}
+    }
+    message, errMessage, success = sapi.MapStatusCodeFn(statusCode, "update", "user", username, err)
+    // Return API response
+    respond(err); return
+}
+
+
+//}}} Update user endpoint
+
+
+

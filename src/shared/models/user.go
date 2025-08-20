@@ -33,7 +33,7 @@ func IsValidUsernameFn(username string) error {
 }
 
 
-func isValidHexStringFn(hexStr string, hexStrName string, length int) error {
+func IsValidHexStringFn(hexStr string, hexStrName string, length int) error {
     if len(hexStr) != length {
         return fmt.Errorf("%s: length must be exactly %d char long", hexStrName, length)
     }
@@ -48,15 +48,55 @@ func (user *User) Validate() error {
     if err := IsValidUsernameFn(user.Username); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.Salt, "salt", 64); err != nil {
+    if err := IsValidHexStringFn(user.Salt, "salt", 64); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.Hash, "hash", 64); err != nil {
+    if err := IsValidHexStringFn(user.Hash, "hash", 64); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.EncSymkey, "enc_symkey", 120); err != nil {
+    if err := IsValidHexStringFn(user.EncSymkey, "enc_symkey", 120); err != nil {
         return err
     }
 
     return nil
 }
+
+
+func ValidateUserMap(input map[string]interface{}) error {
+    // Define validators
+    validators := map[string]func(string) error {
+        "username": func(val string) error {
+            return IsValidUsernameFn(val)
+        },
+        "salt": func(val string) error {
+            return IsValidHexStringFn(val, "salt", 64)
+        },
+        "hash": func(val string) error {
+            return IsValidHexStringFn(val, "hash", 64)
+        },
+        "enc_symkey": func(val string) error {
+            return IsValidHexStringFn(val, "enc_symkey", 120)
+        },
+    }
+
+    // Iterate
+    for field, validateFn := range validators {
+        rawInputField, ok := input[field]
+        if !ok {
+            continue // Skip
+        }
+        // String check
+        strVal, ok := rawInputField.(string)
+        if !ok {
+            return fmt.Errorf("field %q must be string", field)
+        }
+        // Validate
+        if err := validateFn(strVal); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+
+

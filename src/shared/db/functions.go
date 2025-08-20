@@ -3,6 +3,7 @@ import (
     "os"
     "fmt"
     "database/sql"
+    "sort"
 )
 import (
     "github.com/lib/pq"
@@ -100,5 +101,47 @@ func CheckRowsAffectedInsertFn(result sql.Result) error {
     }
     return nil
 }
+
+
+func BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, error) {
+    fn := "BuildSetPartsFn"
+    // Check
+    if len(data) == 0 {
+        return nil, nil, fmt.Errorf("%s: no fields to update", fn)
+    }
+
+    // Initialization
+    setParts := []string{}
+    args := []interface{}{}
+    i := 1
+
+    // Deterministic iteration
+    sorted_keys := make([]string, 0, len(data))
+    for k := range data {
+        sorted_keys = append(sorted_keys, k)
+    }
+    sort.Strings(sorted_keys)
+    for _, value := range sorted_keys {
+        setParts = append(setParts, fmt.Sprintf("%s = $%d", value, i))
+        args = append(args, data[value])
+        i++
+    }
+
+    return setParts, args, nil
+}
+
+// TODO: after %s: should be lowercase letter (No rows were affected worng)
+func CheckRowsAffectedUpdateFn(result sql.Result) (int, error) {
+    fn := "CheckRowsAffectedUpdateFn"
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return 500, fmt.Errorf("%s: failed to check rows affected: %w", fn, err)
+    }
+    if rows == 0 {
+        return 404, fmt.Errorf("%s: No rows were affected", fn)
+    }
+    return 200, nil
+}
+
 
 

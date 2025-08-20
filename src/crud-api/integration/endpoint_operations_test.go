@@ -289,4 +289,120 @@ func Test_ReadUserEndpoint(t *testing.T){
 //}}} ReadUserEndpoint
 
 
+//{{{ UpdateUserEndpoint
+func Test_UpdateUserEndpoint(t *testing.T){
+    // Create some user that will be updated 
+    username := "test_user_update1"
+    user := smodels.User{
+        Username:   username,
+        Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+        Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+    }
+    _, err := cruduser.InsertUser(db, user)
+    if err != nil {
+        t.Fatalf("Failed to create user that will be read/fetch-ed: %v", err)
+    }
+    tests := []EndpointTestCase{
+        {
+            Name:               "UpdateUser",
+            Body:               `{
+                "username":"test_user_update1",
+                "salt":"111feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+            }`,
+            ExpectedStatusCode: 200,
+            ExpectedMessage:    "Success: update user 'test_user_update1'",
+            ExpectedError:      "",
+            ExpectedData:       map[string]any{
+                "username":"test_user_update1",
+            },
+        }, {
+            Name:               "MalformedJson",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update1",
+                "salt":"111feecf4
+            `),
+            ExpectedStatusCode: 400,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Invalid JSON",
+            ExpectedData:       nil,
+        }, {
+            Name:               "UpdateUserNotFound",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update",
+                "salt":"111feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+            }`),
+            ExpectedStatusCode: 404,
+            ExpectedMessage:    "Fail: update user 'test_user_update'",
+            ExpectedError:      "User not found, dosen't exist",
+            ExpectedData:       nil,
+        }, {
+            Name:               "InvalidInputFormatSalt",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update1",
+                "salt":"111feecf"
+            }`),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Invalid input format: salt",
+            ExpectedData:       nil,
+        }, {
+            Name:               "InvalidInputFormatHash",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update1",
+                "hash":"111feecf"
+            }`),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Invalid input format: hash",
+            ExpectedData:       nil,
+        }, {
+            Name:               "InvalidInputFormatEncSymkey",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update1",
+                "enc_symkey":"111feecf"
+            }`),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Invalid input format: enc_symkey",
+            ExpectedData:       nil,
+        }, {
+            Name:               "MissingUsername",
+            Body:               fmt.Sprintf(`{
+                "salt":"111feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+            }`),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Missing required field: 'username'",
+            ExpectedData:       nil,
+        }, {
+            Name:               "InvalidInputNotEnoughFileds",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_update1"
+            }`),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: update user ''",
+            ExpectedError:      "Invalid input: must contain at least 2 fields total",
+            ExpectedData:       nil,
+        },
+
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.Name, func(t *testing.T) {
+            // Create req, resp
+            req := httptest.NewRequest("POST", "/update/user", strings.NewReader(tc.Body))
+            resp := httptest.NewRecorder()
+            // Call endpoint
+            cruduser.UpdateUserEndpoint(resp, req, db)
+            // Check
+            assertResponse(t, resp, tc)
+        })
+    }
+}
+
+//}}} UpdateUserEndpoint
+
+
+
 

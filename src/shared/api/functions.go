@@ -6,7 +6,8 @@ import (
     "strings"
 )
 
-
+//TODO: rethink about this fn current problem is reading value will dump/erase
+//  r.Body either repouplate it or rethink if this is even needed
 func ExtractJSONValueFn(r *http.Request, key string, target interface{}) error {
     fn := "ExtractJSONValueFn"
     var raw map[string]json.RawMessage
@@ -25,6 +26,23 @@ func ExtractJSONValueFn(r *http.Request, key string, target interface{}) error {
 
     return nil
 }
+
+//TODO: potentially not api-layer but something else
+func SanitizeKeysFn(inputMap map[string]interface{}, allowed []string) (map[string]interface{}) {
+    allowedSet := make(map[string]struct{}, len(allowed))
+    // Poppulate allowedSet with allowed keys
+    for _, key := range allowed {
+        allowedSet[key] = struct{}{} // Use struct so ok isn't false
+    }
+    // Iterate over inputMap and check if its key is present in allowedSet
+    for k := range inputMap {
+        if _, ok := allowedSet[k]; !ok {
+            delete(inputMap, k)
+        }
+    }
+    return inputMap
+}
+
 
 
 func MapStatusCodeFn(code int, action, entity, name string, err error) (msg, errMsg string, isSucc bool) {

@@ -2,6 +2,7 @@ package cruduser
 import (
     "fmt"
     "database/sql"
+    "strings"
 )
 import (
     smodels "github.com/FAH2S/diar4/src/shared/models"
@@ -31,7 +32,7 @@ func InsertUser(db *sql.DB, user smodels.User) (int, error) {
     return 201, nil
 }
 
-
+//{{{ SelectUser
 func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
     wrap := "SelectUser"
     // Create query
@@ -55,6 +56,34 @@ func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
         return statusCode, nil, err
     }
     return statusCode, &user, nil
+}
+//}}} SelectUser
+
+
+func UpdateUser(db *sql.DB, data map[string]interface{}, username string) (int, error) {
+    wrap := "UpdateUser"
+    // Build set parts, return err if empty
+    setParts, args, err := sdb.BuildSetPartsFn(data)
+    if err != nil {
+        return 422, fmt.Errorf("%s: %w", wrap, err)
+    }
+    // Create querry
+    query := fmt.Sprintf(`Update users SET %s WHERE username = $%d`, strings.Join(setParts, ", "), len(args)+1)
+    args = append(args, username)
+    // Update DB
+    result, err := db.Exec(query, args...)
+    // Map errors
+    if err != nil {
+        statusCode, err := sdb.HandlePgErrorFn("user", err)
+        return statusCode, fmt.Errorf("%s: %w", wrap, err)
+    }
+    // Check
+    statusCode, err := sdb.CheckRowsAffectedUpdateFn(result)
+    if err != nil {
+        return statusCode, fmt.Errorf("%s: %w", wrap, err)
+    }
+    // Return
+    return 200, nil
 }
 
 

@@ -141,7 +141,7 @@ func Test_UserModel_HexString_Fail(t *testing.T) {
 
     for _, tc := range tests {
         t.Run(tc.name, func(t *testing.T) {
-            actual := isValidHexStringFn(tc.hexStr, tc.hexStrName, tc.length)
+            actual := IsValidHexStringFn(tc.hexStr, tc.hexStrName, tc.length)
             if actual == nil || actual.Error() != tc.expected {
                 t.Errorf("\nExpected:\t%q\nGot:\t%q", tc.expected, actual)
             }
@@ -150,4 +150,39 @@ func Test_UserModel_HexString_Fail(t *testing.T) {
 }
 //}}} hex string fail
 
+
+//{{{ Test ValidateUserMap
+func Test_ValidateUserMap(t *testing.T) {
+    tests := []struct {
+        name                string
+        input               map[string]interface{}
+        expectedErrSubStr   string
+    }{
+        //field must be string, 
+        {
+            name:               "FieldNotString",
+            input:              map[string]interface{}{
+                "salt": 1234,
+            },
+            expectedErrSubStr:  "field \"salt\" must be string",
+        }, {
+            // Check if passing err is correct from validate fn
+            name:               "FieldNotValid",
+            input:              map[string]interface{}{
+                "salt": "1234567890abcdf",
+            },
+            expectedErrSubStr:  "salt: length must be exactly 64 char long",
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            err := ValidateUserMap(tc.input)
+            if err == nil || err.Error() != tc.expectedErrSubStr {
+                t.Errorf("\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+        })
+    }
+}
+//}}} Test ValidateUserMap
 

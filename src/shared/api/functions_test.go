@@ -158,3 +158,59 @@ func Test_ExtractJSONValueFn(t *testing.T) {
 }
 //}}} Test ExtractJSONValueFn
 
+
+//{{{ Test SanitizeKeysFn
+func Test_SanitizeKeysFn(t *testing.T) {
+    tests := []struct{
+        name        string
+        inputMap    map[string]interface{}
+        allowed     []string
+        outputMap   map[string]interface{}
+    } {
+        {
+            name:       "Filter",
+            inputMap:   map[string]interface{}{
+                "field_allowed": true,
+                "field_unallowed": false,
+            },
+            allowed:    []string{"field_allowed", "something_else"},
+            outputMap:  map[string]interface{}{
+                "field_allowed": true,
+            },
+        }, {
+            name:       "NoFiltering",
+            inputMap:   map[string]interface{}{
+                "field_allowed": true,
+                "field_unallowed": false,
+            },
+            allowed:    []string{"field_allowed", "field_unallowed"},
+            outputMap:  map[string]interface{}{
+                "field_allowed": true,
+                "field_unallowed": false,
+            },
+        }, {
+            name:       "AllowedEmpty",
+            inputMap:   map[string]interface{}{
+                "field_allowed": true,
+                "field_unallowed": false,
+            },
+            allowed:    []string{},
+            outputMap:  map[string]interface{}{},
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            actualMap := SanitizeKeysFn(tc.inputMap, tc.allowed)
+            if !reflect.DeepEqual(tc.outputMap, actualMap) {
+                t.Errorf("\nExpected map not same\nExpected:\t%+v\nGot:\t\t%+v", tc.outputMap, actualMap)
+            }
+        })
+    }
+}
+
+
+
+//}}} Test SanitizeKeysFn
+
+

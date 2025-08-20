@@ -78,41 +78,41 @@ Body:
 <!-- {{{ Responses: 201, 400, 409, 422, 500 -->
 ## API Responses
 > `username` might be ommited if no username provided or wrong content-type
-
-    201 Created
+    //TODO test formatting statuscode with body
 ```
+201 Created
     {
         "message":  "Success: create user '{username}'",
         "error":    nil,
         "data":     nil,
     }
 ```
-    400 Bad Request
 ```
+400 Bad Request
     {
         "message":  "Fail: create user '{username}'",
         "error":    "Invalid JSON",
         "data":     nil,
     }
 ```
-    409 Conflict 
 ```
+409 Conflict
     {
         "message":  "Fail: create user '{username}'",
         "error":    "User already exist",
         "data":     nil,
     }
 ```
-    422 Unprocessable Entity
 ```
+422 Unprocessable Entity
     {
         "message":  "Fail: create user '{username}'",
         "error":    "Invalid input format: [hash/salt/..]: [reason what is wrong]",
         "data":     nil,
     }
 ```
-    500 Internal Server Error
 ```
+500 Internal Server Error
     {
         "message":  "Fail: create user '{username}'",
         "error":    "Unknown error occured", "Internal server error"
@@ -185,40 +185,40 @@ Body:
 ```
 <!-- {{{ Responses: 200, 400, 404, 422, 500 -->
 ## API Responses
-    200 OK
 ```
+200 OK
     {
         "message":  "Success: read user '{username}'",
         "error":    nil,
         "data":     {JSON map of User model},
     }
 ```
-    400 Bad Request
 ```
+400 Bad Request
     {
         "message":  "Fail: read user ''",   //Malformed JSON can't process body aka extract username
         "error":    "Invalid JSON",
         "data":     nil,
     }
 ```
-    404 Not Found
 ```
+404 Not Found
     {
         "message":  "Fail: read user '{username}'",
         "error":    "User not found, dosen't exist",
         "data":     nil,
     }
 ```
-    422 Unprocessable Entity
 ```
+422 Unprocessable Entity
     {
         "message":  "Fail: read user '{username}'",
         "error":    "Invalid input format: username: [reason what is wrong]",
         "data":     nil,
     }
 ```
-    500 Internal Server Error
 ```
+500 Internal Server Error
     {
         "message":  "Fail: read user '{username}'",
         "error":    "Unknown error occured", "Internal server error"
@@ -272,6 +272,114 @@ Returns:
 
 
 <!-- {{{ UPDATE User -->
+POST /update/user<br>
+Headers:
+```
+    Content-Type: application/json
+```
+Body:
+```
+    {
+        "username":     string  (required, mina_len: 3, max_len: 30,
+                                pattern: ^[a-zA-Z0-9_]+$)
+        "salt":         string  (optional, hex-string, len:64)
+        "hash":         string  (optional, hex-string, len:64)
+        "enc_symkey":   string  (optional, hex-string, len:120)
+    }
+```
+<!-- {{{ Responses: 200, 400, 404, 422, 500 -->
+## API Responses
+```
+200 OK
+    {
+        "message":  "Success: update user '{username}'",
+        "error":    nil,
+        "data":     {"username": "{username}"},
+    }
+```
+```
+400 Bad Request
+    {
+        "message":  "Fail: update user ''",   //Malformed JSON can't process body aka extract username
+        "error":    "Invalid JSON" or "unknown column used",
+        "data":     nil,
+    }
+```
+```
+404 Not Found
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "User not found, dosen't exist",
+        "data":     nil,
+    }
+```
+```
+422 Unprocessable Entity
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "Invalid input format: [column]: [reason what is wrong]",
+        "data":     nil,
+    }
+```
+```
+500 Internal Server Error
+    {
+        "message":  "Fail: update user '{username}'",
+        "error":    "Unknown error occured", "Internal server error"
+        "data":     nil,
+    }
+```
+<!-- }}} Responses: 200, 400, 404, 422, 500 -->
+<!-- {{{ Flow -->
+## Flow
+## Endpoint
+### Wrapper: `UpdateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
+Accept package, checks if data is valid if so updates DB.<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- function: [`SanitizeKeysFn()`](shared.md#function-sanitizekeysfninputmap-mapstringinterface-allowed-string-mapstringinterface) from shared/api
+- wrapper: [`ValidateUserMap()`](shared.md#wrapper-validateusermapinput-mapstringinterface-error) from shared/models
+- wrapper: [`UpdateUser()`](crud-api.md#wrapper-updateuserdb-sqldb-data-mapstringinterface-username-string-int-error)
+- function: [`WriteJSONResponseFn`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
+
+Logic:
+- Extracts data from package/JSON into map
+- Call `SanitizeKeysFn()` to remove illegal keys
+- Call `ValidateUserMap()` if not valid write response
+- Call `UpdateUser()`
+- Return `APIResponse`
+
+Returns:
+- api response [`APIResponse`](shared.md#struct-apiresponse)<br>
+
+Side effects:
+Change DB, if successful update user (indirectly via UpdateUser)<br><br>
+
+
+### Wrapper: `UpdateUser(db *sql.DB, data map[string]interface{}, username string) (int, error)`
+Recieves map/dict of updated values and username associated with it, crete query, update user<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- function: [`BuildSetPartsFn`](shared.md#function-buildsetpartsfndata-mapstringinterface-string-interface-error) from shared/db
+- function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
+- function: [`CheckRowsAffectedUpdateFn`](shared.md#function-checkrowsaffectedupdatefnresult-sqlresult-int-error) from shared/db<br>
+
+Logic:
+- Call `BuildSetPartsFn()`
+- Create sql query
+- Call `db.Exec()`
+- Call `HandlePgErrorFn()`
+- Call `CheckRowsAffectedUpdateFn()`<br>
+
+Returns:
+- `int`:    http status code
+- `error`:  if executions wasn't successful + explanation why<br>
+
+Side effects:
+Change DB, if successful<br><br>
+<!-- }}} Flow -->
 <!-- }}} UPDATE User -->
 
 
