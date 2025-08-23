@@ -103,7 +103,6 @@ func CheckRowsAffectedInsertFn(result sql.Result) error {
 }
 
 
-//TODO: make docs for it
 func BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, error) {
     fn := "BuildSetPartsFn"
     // Check
@@ -130,5 +129,19 @@ func BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, erro
 
     return setParts, args, nil
 }
+
+
+func CheckRowsAffectedUpdateFn(result sql.Result) (int, error) {
+    fn := "CheckRowsAffectedUpdateFn"
+    rows, err := result.RowsAffected()
+    if err != nil {
+        return 500, fmt.Errorf("%s: failed to check rows affected: %w", fn, err)
+    }
+    if rows == 0 {
+        return 404, fmt.Errorf("%s: No rows were affected", fn)
+    }
+    return 200, nil
+}
+
 
 

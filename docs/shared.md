@@ -61,6 +61,27 @@ Check if rows affected is different from exactly one !=1<br>
 
 Returns:
 - `error`:  if unexpcted number of rows affected<br><br>
+
+### Function: `CheckRowsAffectedUpdateFN(result sql.Result) (int, error)`
+Check if rows affected is non zero.<br>
+
+Returns:
+- `int`:    http status code
+- `error`:  if unexpected nomber of rows affected<br><br>
+
+
+### Function: `BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, error)`
+Dynamically create SET part of query based on filed from data.<br>
+
+Logic:
+- Check if data is non-zero/empty
+- Sort keys from data for deterministic iteration
+- Iterate and create string for query<br>
+
+Returns:
+- `[]string`:       list of strings ex: `["hash = $1", ...]`
+- `[]interface{}`:  list of values that will be updated.
+- `error`:          error if no fields are present to update<br><br>
 <!-- }}} DB-->
 
 

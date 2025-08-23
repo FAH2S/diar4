@@ -163,7 +163,9 @@ func Test_HandleSelectErrorFn(t *testing.T) {
 //}}} HandleSelectErrorFn
 
 
-//{{{ CheckRowsAffectedInsert
+//{{{ CheckRows
+
+
 //{{{ helper
 type mockResult struct {
     rows    int64
@@ -179,6 +181,7 @@ func (m mockResult) LastInsertId() (int64, error) {
 //}}} helper
 
 
+//{{{ CheckRowsAffectedInsert
 func Test_CheckRowsAffectedInsertFn(t *testing.T) {
     tests := []struct {
         name        string
@@ -219,6 +222,53 @@ func Test_CheckRowsAffectedInsertFn(t *testing.T) {
     }
 }
 //}}} CheckRowsAffectedInsert
+
+
+//{{{ CheckRowsAffectedUpdateFn
+func Test_CheckRowsAffectedUpdateFn(t *testing.T) {
+    tests := []struct {
+        name                string
+        result              sql.Result
+        expectedErrSubStr   string
+        expectedStatusCode  int
+    }{
+        {
+            name:               "Success",
+            result:             mockResult{rows: 1, err: nil},
+            expectedErrSubStr:  "",
+            expectedStatusCode: 200,
+        }, {
+            name:               "FailNotFound",
+            result:             mockResult{rows: 0, err: nil},
+            expectedErrSubStr:  "No rows were affected",
+            expectedStatusCode: 404,
+        }, {
+            name:               "FailToCheckRows",
+            result:             mockResult{rows: 0, err: errors.New("failed to check rows")},
+            expectedErrSubStr:  "failed to check rows affected:",
+            expectedStatusCode: 500,
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.name, func(t *testing.T) {
+            statusCode, err := CheckRowsAffectedUpdateFn(tc.result)
+            // Check status code
+            if tc.expectedStatusCode != statusCode {
+                t.Errorf("Wrong statusCode:\nExpected:\t%d\nGot:\t\t%d", tc.expectedStatusCode, statusCode)
+            }
+            // Chech error, substring match
+            if tc.expectedErrSubStr != "" && err != nil && !strings.Contains(err.Error(), tc.expectedErrSubStr) {
+                t.Errorf("Wrong error:\nExpected:\t%q\nGot:\t\t%q", tc.expectedErrSubStr, err)
+            }
+        })
+    }
+}
+
+//}}} CheckRowsAffectedUpdateFn
+
+
+//}}} CheckRows
 
 
 //{{{ BuildSetPartsFn
@@ -278,6 +328,5 @@ func Test_BuildSetPartsFn(t *testing.T) {
 }
 
 //}}} BuildSetParts
-
 
 
