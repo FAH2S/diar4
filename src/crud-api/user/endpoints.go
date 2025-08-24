@@ -110,14 +110,78 @@ func ReadUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 
 //{{{ Update user endpoint
+func UpdateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+    var (
+        wrap        = "UpdateUserEndpoint"
+        // Input
+        inputData   map[string]interface{}
+        username    = ""
+        // Response info
+        statusCode  = 500
+        message     = "Fail: update user ''"
+        errMessage  = "Unknown error occurred"
+        returnData  map[string]string
+        ip          = r.RemoteAddr
+        success     = false
+    )
+    // Helper fn, logs result and writes JSON response
+    respond := func(err error) {
+        if success {
+            log.Printf("%s: %s | status: %d | IP: %s", wrap, message, statusCode, ip)
+        } else {
+            log.Printf("%s: %v | status: %d | IP: %s", wrap, err, statusCode, ip)
+        }
+        sapi.WriteJSONResponseFn(w, statusCode, message, errMessage, returnData)
+    }
 
-// recieve packet
-// parse json to map
-// remove all nonwhiteliseted fields aka not existant in table
-// validate fields ex. if hash present run .isValidX on it for each field
-//      make sure username is present
-// pass data/map to UpdateUserFn
-// return/respond
+    // Decode request body into map/dict data
+    err := json.NewDecoder(r.Body).Decode(&inputData); if err != nil {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+
+    // Extract username
+    val, ok := inputData["username"]
+    if !ok {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+    username, ok = val.(string)
+    if !ok {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+
+
+
+    // Remove illegal keys/fields   SOME FN
+    // EXTRACT
+    allowed := []string{"salt", "hash", "enc_symkey"}
+    allowedSet := make(map[string]struct{}, len(allowed))
+    for _, key := range allowed {
+        allowedSet[key] = struct{}{}
+    }
+    for k := range inputData {
+        if _, ok := allowedSet[k]; !ok {
+            delete(inputData, k)
+        }
+    }
+    // EXTRACT
+
+
+    // Call UpdateUser
+    statusCode, err = UpdateUser(db, inputData, username)
+    if statusCode == 200 {
+        returnData = map[string]string{"username":username}
+    }
+    message, errMessage, success = sapi.MapStatusCodeFn(statusCode, "update", "user", username, err)
+    // Return API response
+    respond(err); return
+}
+
 
 //}}} Update user endpoint
 

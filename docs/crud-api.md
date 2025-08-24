@@ -78,9 +78,9 @@ Body:
 <!-- {{{ Responses: 201, 400, 409, 422, 500 -->
 ## API Responses
 > `username` might be ommited if no username provided or wrong content-type
-
-    201 Created
+    //TODO test formatting statuscode with body
 ```
+    201 Created
     {
         "message":  "Success: create user '{username}'",
         "error":    nil,
@@ -301,7 +301,7 @@ Body:
 ```
     {
         "message":  "Fail: update user ''",   //Malformed JSON can't process body aka extract username
-        "error":    "Invalid JSON",
+        "error":    "Invalid JSON" or "unknown column used",
         "data":     nil,
     }
 ```
@@ -341,8 +341,9 @@ Requirements:
 - pointer to `sql.DB` instance
 
 Logic:
-- Extracts data from package
+- Extracts data from package, separate username
 - Validate data (iterate over PRESENT fields then .validate)
+- Filter/Remove illegal key's
 - Call UpdateUser
 - Return API response
 
@@ -350,23 +351,25 @@ Returns:
 - api response [`APIResponse`](shared.md#struct-apiresponse)<br><br>
 
 
-TODO: currently ROUGH sketch
-### Wrapper: `UpdateUser(db *sql.DB, user *models.User) (int, error)`
-Recieves (potenitonally partially empty) user instance, crete query with it, update user<br>
+### Wrapper: `UpdateUser(db *sql.DB, data map[string]interface{}, username string) (int, error)`
+Recieves map/dict of updated values and username associated with it, crete query, update user<br>
 
 Requirements:
 - pointer to `sql.DB` instance
-- instance: [`User`](shared.md#struct-user) from shared/models
-- wrapper: [`HandleSelectErrorFn()`](shared.md#wrapper-handleselecterrorfnerr-error-int-error) from shared/db<br>
+- function: [`BuildSetPartsFn`](shared.md#function-buildsetpartsfndata-mapstringinterface-string-interface-error) from shared/db
+- function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
+- function: [`CheckRowsAffectedUpdateFn`](shared.md#function-checkrowsaffectedupdatefnresult-sqlresult-int-error) from shared/db<br>
 
 Logic:
+- Call `BuildSetPartsFn()`
 - Create sql query
-- Populate query based on present data from User instance (skip empty fields)
-- Call db query<br>
+- Call `db.Exec()`
+- Call `HandlePgErrorFn()`
+- Call `CheckRowsAffectedUpdateFn()`<br>
 
 Returns:
-- `int`:            http status code
-- `erorr`:          if execution wasn't successful + explanation why<br><br>
+- `int`:    http status code
+- `error`:  if executions wasn't successful + explanation why<br><br>
 <!-- }}} Flow -->
 <!-- }}} UPDATE User -->
 
