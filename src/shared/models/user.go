@@ -33,7 +33,7 @@ func IsValidUsernameFn(username string) error {
 }
 
 
-func isValidHexStringFn(hexStr string, hexStrName string, length int) error {
+func IsValidHexStringFn(hexStr string, hexStrName string, length int) error {
     if len(hexStr) != length {
         return fmt.Errorf("%s: length must be exactly %d char long", hexStrName, length)
     }
