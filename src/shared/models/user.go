@@ -48,13 +48,13 @@ func (user *User) Validate() error {
     if err := IsValidUsernameFn(user.Username); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.Salt, "salt", 64); err != nil {
+    if err := IsValidHexStringFn(user.Salt, "salt", 64); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.Hash, "hash", 64); err != nil {
+    if err := IsValidHexStringFn(user.Hash, "hash", 64); err != nil {
         return err
     }
-    if err := isValidHexStringFn(user.EncSymkey, "enc_symkey", 120); err != nil {
+    if err := IsValidHexStringFn(user.EncSymkey, "enc_symkey", 120); err != nil {
         return err
     }
 

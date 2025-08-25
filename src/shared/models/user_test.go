@@ -141,7 +141,7 @@ func Test_UserModel_HexString_Fail(t *testing.T) {
 
     for _, tc := range tests {
         t.Run(tc.name, func(t *testing.T) {
-            actual := isValidHexStringFn(tc.hexStr, tc.hexStrName, tc.length)
+            actual := IsValidHexStringFn(tc.hexStr, tc.hexStrName, tc.length)
             if actual == nil || actual.Error() != tc.expected {
                 t.Errorf("\nExpected:\t%q\nGot:\t%q", tc.expected, actual)
             }
