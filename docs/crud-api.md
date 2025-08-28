@@ -24,8 +24,8 @@ Use Case:
 <!-- {{{ Middleware -->
 Middleware that checks for method (POST) and header (Content-Type: application/json).
 ## API Respnse
-    400 Bad Request
 ```
+400 Bad Request
     {
         "message":  "Fail: to process 'URL path:[/create/user, /read/user ...]'",
         "error":    "Method not allowed"/"Content-Type must be application/json",
@@ -38,12 +38,12 @@ Intercepts packet and check if it uses correct method and header.<br>
 
 Requirements:
 - http.Handler
-- function: [`isMethodPOSTFn`](crud-api.md#function-ismethodpostfnr-httprequest-bool)
-- function: [`isHeaderCTAJFn`](crud-api.md#function-isheaderctajfnr-httprequest-bool)<br>
+- function: [`isMethodPOSTFn()`](crud-api.md#function-ismethodpostfnr-httprequest-bool)
+- function: [`isHeaderCTAJFn()`](crud-api.md#function-isheaderctajfnr-httprequest-bool)<br>
 
 Logic:
-- Call `isMethodPOSTFn`
-- Call `isHeaderCTAJFn`
+- Call `isMethodPOSTFn()`
+- Call `isHeaderCTAJFn()`
 - Pass packet to CRUD<br>
 
 Retruns:
@@ -341,7 +341,7 @@ Requirements:
 - function: [`SanitizeKeysFn()`](shared.md#function-sanitizekeysfninputmap-mapstringinterface-allowed-string-mapstringinterface) from shared/api
 - wrapper: [`ValidateUserMap()`](shared.md#wrapper-validateusermapinput-mapstringinterface-error) from shared/models
 - wrapper: [`UpdateUser()`](crud-api.md#wrapper-updateuserdb-sqldb-data-mapstringinterface-username-string-int-error)
-- function: [`WriteJSONResponseFn`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
+- function: [`WriteJSONResponseFn()`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
 
 Logic:
 - Extracts data from package/JSON into map
@@ -362,9 +362,9 @@ Recieves map/dict of updated values and username associated with it, crete query
 
 Requirements:
 - pointer to `sql.DB` instance
-- function: [`BuildSetPartsFn`](shared.md#function-buildsetpartsfndata-mapstringinterface-string-interface-error) from shared/db
+- function: [`BuildSetPartsFn()`](shared.md#function-buildsetpartsfndata-mapstringinterface-string-interface-error) from shared/db
 - function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
-- function: [`CheckRowsAffectedUpdateFn`](shared.md#function-checkrowsaffectedupdatefnresult-sqlresult-int-error) from shared/db<br>
+- function: [`CheckRowsAffectedUpdateFn()`](shared.md#function-checkrowsaffectedupdatefnresult-sqlresult-int-error) from shared/db<br>
 
 Logic:
 - Call `BuildSetPartsFn()`

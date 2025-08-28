@@ -5,7 +5,7 @@ Creates new connection to database from environment variables.<br>
 
 Requirements:
 - `DB_USER, DB_PWD, DB_HOST, DB_PORT, DB_NAME` must be set as non empty string.
-- function: [`buildConnStrFromEnvFn()`](shared.md#function-buildconnstrfromenvfn)
+- function: [`buildConnStrFromEnvFn()`](shared.md#function-buildconnstrfromenvfn-string-error)
 - `sql.Open()`
 - `sql.Ping()`<br>
 
