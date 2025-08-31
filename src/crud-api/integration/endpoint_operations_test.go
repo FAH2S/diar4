@@ -404,5 +404,66 @@ func Test_UpdateUserEndpoint(t *testing.T){
 //}}} UpdateUserEndpoint
 
 
+//{{{ DeleteUserEndpoint
+func Test_DeleteUserEndpoint(t *testing.T){
+    // Create some user that will be fetched
+    username := "test_user_delete1"
+    user := smodels.User{
+        Username:   username,
+        Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+        Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+    }
+    _, err := cruduser.InsertUser(db, user)
+    if err != nil {
+        t.Fatalf("Failed to create user that will be read/fetch-ed: %v", err)
+    }
+    // Define tests and its expected results
+    tests := []EndpointTestCase{
+        {
+            Name:               "DeleteUser",
+            Body:               fmt.Sprintf(`{"username":"%s"}`, username),
+            ExpectedStatusCode: 200,
+            ExpectedMessage:    fmt.Sprintf("Success: delete user '%s'", username),
+            ExpectedError:      "",
+            ExpectedData:       nil,
+        },{
+            Name:               "MalformedJSON",
+            Body:               fmt.Sprintf(`{"username":"%s`, username),
+            ExpectedStatusCode: 400,
+            ExpectedMessage:    "Fail: delete user ''",
+            ExpectedError:      "Invalid JSON",
+            ExpectedData:       nil,
+        },{
+            Name:               "NotFound",
+            Body:               fmt.Sprintf(`{"username":"%s"}`, username),
+            ExpectedStatusCode: 404,
+            ExpectedMessage:    fmt.Sprintf("Fail: delete user '%s'", username),
+            ExpectedError:      "User not found, dosen't exist",
+            ExpectedData:       nil,
+        },{
+            Name:               "UnprocessableUsername",
+            Body:               `{"username":"fishy user |._.|><|"}`,
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: delete user 'fishy user |._.|><|'",
+            ExpectedError:      "Invalid input format: username: contains invalid characters",
+            ExpectedData:       nil,
+        },
+    }
+    // Iterate
+    for _, tc := range tests {
+        t.Run(tc.Name, func(t *testing.T) {
+            // Create req, resp
+            req := httptest.NewRequest("POST", "/delete/user", strings.NewReader(tc.Body))
+            resp := httptest.NewRecorder()
+            // Call endpoint
+            cruduser.DeleteUserEndpoint(resp, req, db)
+            // Check
+            assertResponse(t, resp, tc)
+        })
+    }
+}
+
+//}}} DeleteUserEndpoint
 
 

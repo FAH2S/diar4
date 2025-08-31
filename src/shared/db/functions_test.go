@@ -224,8 +224,8 @@ func Test_CheckRowsAffectedInsertFn(t *testing.T) {
 //}}} CheckRowsAffectedInsert
 
 
-//{{{ CheckRowsAffectedUpdateFn
-func Test_CheckRowsAffectedUpdateFn(t *testing.T) {
+//{{{ CheckRowsAffectedFn
+func Test_CheckRowsAffectedFn(t *testing.T) {
     tests := []struct {
         name                string
         result              sql.Result
@@ -240,7 +240,7 @@ func Test_CheckRowsAffectedUpdateFn(t *testing.T) {
         }, {
             name:               "FailNotFound",
             result:             mockResult{rows: 0, err: nil},
-            expectedErrSubStr:  "No rows were affected",
+            expectedErrSubStr:  "no rows were affected",
             expectedStatusCode: 404,
         }, {
             name:               "FailToCheckRows",
@@ -252,7 +252,7 @@ func Test_CheckRowsAffectedUpdateFn(t *testing.T) {
     // Iterate
     for _, tc := range tests {
         t.Run(tc.name, func(t *testing.T) {
-            statusCode, err := CheckRowsAffectedUpdateFn(tc.result)
+            statusCode, err := CheckRowsAffectedFn(tc.result)
             // Check status code
             if tc.expectedStatusCode != statusCode {
                 t.Errorf("Wrong statusCode:\nExpected:\t%d\nGot:\t\t%d", tc.expectedStatusCode, statusCode)
@@ -265,7 +265,7 @@ func Test_CheckRowsAffectedUpdateFn(t *testing.T) {
     }
 }
 
-//}}} CheckRowsAffectedUpdateFn
+//}}} CheckRowsAffectedFn
 
 
 //}}} CheckRows

@@ -130,18 +130,17 @@ func BuildSetPartsFn(data map[string]interface{}) ([]string, []interface{}, erro
     return setParts, args, nil
 }
 
-// TODO: after %s: should be lowercase letter (No rows were affected worng)
-func CheckRowsAffectedUpdateFn(result sql.Result) (int, error) {
-    fn := "CheckRowsAffectedUpdateFn"
+
+func CheckRowsAffectedFn(result sql.Result) (int, error) {
+    fn := "CheckRowsAffectedFn"
     rows, err := result.RowsAffected()
     if err != nil {
         return 500, fmt.Errorf("%s: failed to check rows affected: %w", fn, err)
     }
     if rows == 0 {
-        return 404, fmt.Errorf("%s: No rows were affected", fn)
+        return 404, fmt.Errorf("%s: no rows were affected", fn)
     }
     return 200, nil
 }
-
 
 

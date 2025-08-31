@@ -182,4 +182,49 @@ func UpdateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 //}}} Update user endpoint
 
 
+//{{{ Delete user endpoint
+func DeleteUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+    var (
+        wrap        = "DeleteUserEndpoint"
+        // Input
+        username    = ""
+        // Response info
+        statusCode  = 500
+        message     = "Fail: delete user ''"
+        errMessage  = "Unknown error occured"
+        ip          = r.RemoteAddr
+        success     = false
+    )
 
+    // Helper fn, logs result and writes JSON response
+    respond := func(err error) {
+        if success {
+            log.Printf("%s: %s | status: %d | IP: %s", wrap, message, statusCode, ip)
+        } else {
+            log.Printf("%s: %v | status: %d | IP: %s", wrap, err, statusCode, ip)
+        }
+        sapi.WriteJSONResponseFn(w, statusCode, message, errMessage, nil)
+    }
+
+    // Extract username from request body
+    err := sapi.ExtractJSONValueFn(r, "username", &username); if err != nil {
+        statusCode = 400
+        errMessage = "Invalid JSON"
+        respond(err); return
+    }
+
+    // Validate extracted username
+    err = smodels.IsValidUsernameFn(username)
+    if err != nil {
+        statusCode = 422
+        message = fmt.Sprintf("Fail: delete user '%s'", username)
+        errMessage = fmt.Sprintf("Invalid input format: %v", err)
+        respond(err); return
+    }
+
+    // Attempt to delete user
+    statusCode, err = DeleteUser(db, username)
+    message, errMessage, success = sapi.MapStatusCodeFn(statusCode, "delete", "user", username, err)
+    respond(err); return
+}
+///}}} Delete user endpoint

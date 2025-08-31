@@ -62,7 +62,7 @@ Check if rows affected is different from exactly one !=1<br>
 Returns:
 - `error`:  if unexpcted number of rows affected<br><br>
 
-### Function: `CheckRowsAffectedUpdateFn(result sql.Result) (int, error)`
+### Function: `CheckRowsAffectedFn(result sql.Result) (int, error)`
 Check if rows affected is non zero.<br>
 
 Returns:

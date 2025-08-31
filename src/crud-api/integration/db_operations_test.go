@@ -209,19 +209,19 @@ func Test_UpdateUser(t *testing.T) {
             expectedStatusCode: 400,
             expectedError:      errors.New("unknown column used"),
         }, {
-            name:               "FailDataEmpty422",
-            data:               map[string]interface{}{},
-            username:           "test_update_user1",
-            expectedStatusCode: 422,
-            expectedError:      errors.New("no fields to update"),
-        }, {
             name:               "FailNoUpdates404",
             data:               map[string]interface{}{
                 "hash":"2222d825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
             },
             username:           "test_update_user99",
             expectedStatusCode: 404,
-            expectedError:      errors.New("No rows were affected"),
+            expectedError:      errors.New("no rows were affected"),
+        }, {
+            name:               "FailDataEmpty422",
+            data:               map[string]interface{}{},
+            username:           "test_update_user1",
+            expectedStatusCode: 422,
+            expectedError:      errors.New("no fields to update"),
         },
     }
     //iterate
@@ -246,6 +246,58 @@ func Test_UpdateUser(t *testing.T) {
 //}}} Update user
 
 
+//{{{ Delete user
+func Test_DeleteUser(t *testing.T) {
+    validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    // Create user that will be updated (not dependant on previous tests)
+    createUser := smodels.User{
+        Username:   "test_delete_user1",
+        Salt:       validSalt,
+        Hash:       validHash,
+        EncSymkey:  validEncSymkey,
+    }
+    _, err := cruduser.InsertUser(db, createUser)
+    if err != nil {
+        t.Fatalf("Failed to create user that will be updated-ed: %v", err)
+    }
+    tests := []struct {
+        name                string
+        username            string
+        expectedStatusCode  int
+        expectedError       error
+    }{
+        {
+            name:               "SuccessDeleteUser",
+            username:           "test_delete_user1",
+            expectedStatusCode: 200,
+            expectedError:      nil,
+        }, {
+            name:               "FailUserNotFound",
+            username:           "test_delete_user1",
+            expectedStatusCode: 404,
+            expectedError:      errors.New("DeleteUser: CheckRowsAffectedFn: no rows were affected"),
+        },
+    }
+    // Iterate
+    for _, tc := range tests{
+        t.Run(tc.name, func(t *testing.T) {
+            statusCode, err := cruduser.DeleteUser(db, tc.username)
+            if tc.expectedStatusCode != statusCode {
+                t.Errorf("Wrong status code\nExpected:\t%d\nGot:\t\t%d", tc.expectedStatusCode, statusCode)
+            }
 
+            if (err == nil) != (tc.expectedError == nil) {
+                t.Errorf("Wrong Error\nExpected:\t%v\nGot:\t\t%v", tc.expectedError, err)
+            } else if err != nil &&
+                tc.expectedError != nil &&
+                !strings.Contains(err.Error(), tc.expectedError.Error()){
+                t.Errorf("Wrong Error\nExpected:\t%q\nGot:\t\t%q", tc.expectedError, err)
+            }
+        })
+    }
+}
+//}}} Delete user
 
 

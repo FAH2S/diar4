@@ -16,6 +16,8 @@ github.com/FAH2S/diar4/src/shared/db v0.0.0-20250823180802-0c8339f8e67b h1:/Ly50
 github.com/FAH2S/diar4/src/shared/db v0.0.0-20250823180802-0c8339f8e67b/go.mod h1:SODVHzl7g4dUV0Mntx98c6Wszo5tDy8Z9A73n019EI0=
 github.com/FAH2S/diar4/src/shared/db v0.0.0-20250828143826-8ca2d9ad4d84 h1:gSsWoZm4DtkOQ8Ror32USITlxBCRhnZYwRMl7BeIlQ8=
 github.com/FAH2S/diar4/src/shared/db v0.0.0-20250828143826-8ca2d9ad4d84/go.mod h1:SODVHzl7g4dUV0Mntx98c6Wszo5tDy8Z9A73n019EI0=
+github.com/FAH2S/diar4/src/shared/db v0.0.0-20250831140142-fb209de09923 h1:EI48WLXr3NSuVfNnUO+Emn/B4JV6S09ViWxhJ7kGxTQ=
+github.com/FAH2S/diar4/src/shared/db v0.0.0-20250831140142-fb209de09923/go.mod h1:SODVHzl7g4dUV0Mntx98c6Wszo5tDy8Z9A73n019EI0=
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250812132229-974b1c748b9d h1:r6u3Me3Ax4gHM1w7IYlD79cqRRNK15d13plGCEAN5SM=
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250812132229-974b1c748b9d/go.mod h1:tFPWSdGeC1gTY/kEyr3I4DTDj329sTRhFdCDJ91Qpgg=
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250825133704-539da88bc2bd h1:IUS9NGefQNvpESKPXbz9xeFPTpZrXC+xYs5D/QY98B0=

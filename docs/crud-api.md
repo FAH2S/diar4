@@ -78,7 +78,6 @@ Body:
 <!-- {{{ Responses: 201, 400, 409, 422, 500 -->
 ## API Responses
 > `username` might be ommited if no username provided or wrong content-type
-    //TODO test formatting statuscode with body
 ```
 201 Created
     {
@@ -141,7 +140,7 @@ Logic:
 Returns:
 - api response [`APIResponse`](shared.md#struct-apiresponse)<br>
 
-Side effects:
+Side effects:<br>
 Change DB, if successful insert user (indirectly via InsertUser)<br><br>
 
 ## Function
@@ -164,7 +163,7 @@ Returns:
 - `int`:    http status code
 - `error`:  if execution wasn't successful + explanation why<br>
 
-Side effects:
+Side effects:<br>
 Change DB, if successful insert user<br><br>
 <!-- Flow }}} -->
 <!-- }}}CREATE User -->
@@ -243,7 +242,7 @@ Logic:
 - Call `ExtractJSONValueFn()` to get username
 - Call `IsValidUsernameFn()`
 - Call `SelectUser()`
-- return `APIResponse`<br><br>
+- return `APIResponse`<br>
 
 Returns:
 - api response [`APIResponse`](shared.md#struct-apiresponse)<br><br>
@@ -353,7 +352,7 @@ Logic:
 Returns:
 - api response [`APIResponse`](shared.md#struct-apiresponse)<br>
 
-Side effects:
+Side effects:<br>
 Change DB, if successful update user (indirectly via UpdateUser)<br><br>
 
 
@@ -364,26 +363,132 @@ Requirements:
 - pointer to `sql.DB` instance
 - function: [`BuildSetPartsFn()`](shared.md#function-buildsetpartsfndata-mapstringinterface-string-interface-error) from shared/db
 - function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
-- function: [`CheckRowsAffectedUpdateFn()`](shared.md#function-checkrowsaffectedupdatefnresult-sqlresult-int-error) from shared/db<br>
+- function: [`CheckRowsAffectedFn()`](shared.md#function-checkrowsaffectedfnresult-sqlresult-int-error) from shared/db<br>
 
 Logic:
 - Call `BuildSetPartsFn()`
 - Create sql query
 - Call `db.Exec()`
 - Call `HandlePgErrorFn()`
-- Call `CheckRowsAffectedUpdateFn()`<br>
+- Call `CheckRowsAffectedFn()`<br>
 
 Returns:
 - `int`:    http status code
 - `error`:  if executions wasn't successful + explanation why<br>
 
-Side effects:
+Side effects:<br>
 Change DB, if successful<br><br>
 <!-- }}} Flow -->
 <!-- }}} UPDATE User -->
 
 
 <!-- {{{ DELETE User -->
+POST /delete/user<br>
+Headers:
+```
+    Content-Type: application/json
+```
+Body:
+```
+    {
+        "username":     string  (required, mina_len: 3, max_len: 30,
+                                pattern: ^[a-zA-Z0-9_]+$)
+    }
+```
+<!-- {{{ Responses: 200, 400, 404, 422, 500 -->
+## API Responses
+```
+200 OK
+    {
+        "message":  "Success: delete user '{username}'",
+        "error":    nil,
+        "data":     nil,
+    }
+```
+```
+400 Bad Request
+    {
+        "message":  "Fail: delete user ''",   //Malformed JSON can't process body aka extract username
+        "error":    "Invalid JSON",
+        "data":     nil,
+    }
+```
+```
+404 Not Found
+    {
+        "message":  "Fail: delete user '{username}'",
+        "error":    "User not found, dosen't exist",
+        "data":     nil,
+    }
+```
+```
+422 Unprocessable Entity
+    {
+        "message":  "Fail: delete user '{username}'",
+        "error":    "Invalid input format: username: [reason what is wrong]",
+        "data":     nil,
+    }
+```
+```
+500 Internal Server Error
+    {
+        "message":  "Fail: delete user '{username}'",
+        "error":    "Unknown error occured", "Internal server error"
+        "data":     nil,
+    }
+```
+<!-- }}} Responses: 200, 400, 404, 422, 500 -->
+<!-- {{{ Flow -->
+## Flow
+## Endpoint
+### Wrapper: `DeleteEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB)`
+Accept package, extract username, validates it, delete user from DB.<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- function: [`ExtractJSONValueFn()`](shared.md#function-extractjsonvaluefnr-httprequest-key-string-target-interface-error) from shared/api
+- function: [`IsValidUsernameFn()`](shared.md#function-isvalidusernamefnusername-string-error) from shared/models
+- wrapper:  [`DeleteUser()`](crud-api.md#wrapper-deleteuserdb-sqldb-username-string-int-error)
+- function: [`WriteJSONResponseFn()`](shared.md#function-writejsonresponsefnw-httpresponsewrite-statuscode-int-message-string-errmsg-string-data-interface) from shared/api<br>
+
+Logic:
+- Call `ExtractJSONValueFn()` to get username
+- Call `IsValidUsernameFn()`
+- Call `DeleteUser()`
+- return `APIResponse`<br>
+
+Returns:
+- api response [`APIResponse`](shared.md#struct-apiresponse)<br>
+
+Side effects:<br>
+Change DB, delete user if successful (inidrectly via `DeleteUser()`<br><br>
+
+
+
+### Wrapper: `DeleteUser(db *sql.DB, username string) (int, error)`
+Create query to dlete user fomr databse, check<br>
+
+Requirements:
+- pointer to `sql.DB` instance
+- function: [`HandlePgErrorFn()`](shared.md#function-handlepgerrorfnerr-error-int-error) from shared/db
+- function: [`CheckRowsAffectedFn()`](shared.md#function-checkrowsaffectedfnresult-sqlresult-int-error) from shared/db<br>
+
+Logic:
+- Create sql query
+- Call `db.Exec()`
+- Call `HandlePgErrorFn()`
+- Call `CheckRowsAffectedFn()`<br>
+
+Returns:
+- `int`:            http status code
+- `erorr`:          if execution wasn't successful + explanation why<br>
+
+Side effects:<br>
+Change DB, delete user if successful 
+<br><br>
+
+
+<!-- }}} Flow -->
 <!-- }}} DELETE User -->
 <!-- Users }}} -->
 

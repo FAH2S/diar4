@@ -60,6 +60,7 @@ func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
 //}}} SelectUser
 
 
+//{{{ UpdateUser
 func UpdateUser(db *sql.DB, data map[string]interface{}, username string) (int, error) {
     wrap := "UpdateUser"
     // Build set parts, return err if empty
@@ -78,12 +79,37 @@ func UpdateUser(db *sql.DB, data map[string]interface{}, username string) (int, 
         return statusCode, fmt.Errorf("%s: %w", wrap, err)
     }
     // Check
-    statusCode, err := sdb.CheckRowsAffectedUpdateFn(result)
+    statusCode, err := sdb.CheckRowsAffectedFn(result)
     if err != nil {
         return statusCode, fmt.Errorf("%s: %w", wrap, err)
     }
     // Return
     return 200, nil
 }
+//}}} UpdateUser
+
+
+//{{{ DeleteUser
+func DeleteUser(db *sql.DB, username string) (int, error) {
+    wrap := "DeleteUser"
+    // Create query
+    query := `DELETE FROM users WHERE username = $1;`
+    // Execute
+    result, err := db.Exec(query, username)
+    // Map errors
+    if err != nil {
+        statusCode, err := sdb.HandlePgErrorFn("user", err)
+        return statusCode, fmt.Errorf("%s: %w", wrap, err)
+    }
+    // Check rows affected 
+    statusCode, err := sdb.CheckRowsAffectedFn(result)
+    if err != nil {
+        return statusCode, fmt.Errorf("%s: %w", wrap, err)
+    }
+    //Return
+    return 200, nil
+
+}
+//}}} DeleteUser
 
 

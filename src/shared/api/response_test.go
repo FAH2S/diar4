@@ -6,7 +6,6 @@ import (
     "reflect"
 )
 
-// TODO: down the line more cases need to be added
 func Test_WriteJSONResponseFn(t *testing.T) {
     tests := []struct {
         name        string
