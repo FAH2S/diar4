@@ -182,3 +182,91 @@ Logic:
 <!-- }}} API -->
 
 
+## Auth
+<!-- {{{ Auth -->
+### Function: `HashPasswordFn(salt, password string) []byte`
+Hash-es(salt + password) return hashBytes.<br>
+
+Requirements:
+- `sha256` from `crypto/sha256`<br>
+
+Logic:
+- convert salt and password to []byte and hash it
+
+Returns:
+- `[]byte`: hash bytes<br><br>
+
+
+### Function: `GenerateRandomBytesFn(length int) ([]byte, error)`
+Generate random bytes with exact `length`.<br>
+
+Requirements:
+- `rand` from `crypto/rand`<br>
+
+Logic:
+- allocate byte array `lenght` size
+- populate it with random bytes<br>
+
+Returns:
+- `[]byte`: random bytes
+- `error`:  if failed to read/populate random bytes<br><br>
+
+
+### Function: `DeriveKeyFn(salt, password string, keyLen int) ([]byte, error)`
+Derive key from salt and password.<br>
+
+Requirements:
+- `hex` from `encoding/hex`
+- `pbkdf2` from `golang.org/x/crypto/pbkdf2`<br>
+
+Logic:
+- initialize pbkdf2 conf
+- decode salt hex-string to bytes
+- generate/derive key<br>
+
+Returns:
+- `[]byte`: derived key bytes
+- `error`:  if failed to decode salt<br><br>
+
+
+### Wrapper: `EncryptAES(keyBytes, plaintextBytes []byte) ([]byte, error)`
+Encrypt plaintext using key.<br>
+
+Requirements:
+- `aes` from `crypto/aes`
+- `cipher` from `crypto/cipher`<br>
+
+Logic:
+- Create cipher block `aes.NewCipher()`
+- Initialize GCM mode `cipher.NewGCM()`
+- Create nonce and populate it with random bytes
+- Encrypt(nonce + ciphertext)<br>
+
+Returns:
+- `[]byte`: ciphertext bytes
+- `error`:  error if failed to encrypt<br><br>
+
+
+### Wrapper: `DecryptAES(keyBytes, cipherBytes []byte) ([]byte, error)`
+Decrypt ciphertext using key, note: ciphertext = nonce + cipher<br>
+
+Requirements:
+- `aes` from `crypto/aes`
+- `cipher` from `crypto/cipher`<br>
+
+Logic:
+- Create cipher block `aes.NewCipher()`
+- Initialize GCM mode `cipher.NewGCM()`
+- Initialize nonce size
+- Separate nonce and cipher
+- Decrypt(nonce, cipher)<br>
+
+Returns:
+- `[]byte`: decrypted bytes
+- `error`:  error if failed to decrypt<br><br>
+<!-- }}} Auth -->
+
+
+
+
+

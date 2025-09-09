@@ -2,32 +2,37 @@ package sharedauth
 
 import (
     "testing"
-    "regexp"
     "errors"
     "encoding/hex"
     "strings"
+    "bytes"
 )
 
+// python3 -c "import hashlib; print(hashlib.sha256(b'mysalt' + b'mypassword').hexdigest())"
+// expected Hash got from python hash
+func Test_HashPasswordFn(t *testing.T) {
+    salt := "mysalt"
+    password := "mypassword"
+    expectedHash := "d02878b06efa88579cd84d9e50b211c0a7caa92cf243bad1622c66081f7e2692"
+    hashBytes := HashPasswordFn(salt, password)
+    hashHex := hex.EncodeToString(hashBytes)
+    if expectedHash != hashHex {
+        t.Errorf("Hash missmatch:\nExpected:\t%s\nGot:\t\t%s", expectedHash, hashHex)
+    }
+}
 
-var (
-    hexRegex = regexp.MustCompile(`^[0-9a-fA-F]+$`)
-)
 
-func Test_GenerateHexStrFn(t *testing.T) {
-    const expectedLen = 64
+func Test_GenerateRandomBytesFn(t *testing.T) {
+    const length = 32
 
     for i := 0; i < 10; i ++ {
-        hexStr, err := GenerateHexStrFn(expectedLen)
+        randomBytes, err := GenerateRandomBytesFn(length)
         if err != nil {
             t.Fatalf("Unedpected error: %v", err)
         }
 
-        if len(hexStr) != expectedLen {
-            t.Errorf("Salt wrong length:\nExpected:\t%d\nGot:\t\t%d", expectedLen, len(hexStr))
-        }
-
-        if !hexRegex.MatchString(hexStr) {
-            t.Errorf("Salt contains non-hex characters: %s", hexStr)
+        if len(randomBytes) != length {
+            t.Errorf("Salt wrong length:\nExpected:\t%d\nGot:\t\t%d", length, len(randomBytes))
         }
     }
 }
@@ -83,7 +88,8 @@ func Test_DeriveKeyFn(t *testing.T) {
     // Iterate
     for _, tc := range tests{
         t.Run(tc.name, func(t *testing.T) {
-            key, err := DeriveKeyFn(tc.salt, tc.password, tc.hexLen)
+            keyBytes, err := DeriveKeyFn(tc.salt, tc.password, tc.hexLen)
+            key := hex.EncodeToString(keyBytes)
             if tc.expectedStr != key {
                 t.Errorf("\nExpected:\t%s\nGot:\t\t%s", tc.expectedStr, key)
             }
@@ -99,31 +105,55 @@ func Test_DeriveKeyFn(t *testing.T) {
 }
 
 
-
 func Test_EncryptAES(t *testing.T){
     keyBytes, _ := hex.DecodeString("725cee33fe79c8b6cda5065c8b180f947d7c34d4ee846645ec233ece6c49b019")
     plaintextBytes := []byte("secret")
 
     // Encrypt
-    cipher, err := EncryptAES(keyBytes, plaintextBytes)
+    cipherBytes, err := EncryptAES(keyBytes, plaintextBytes)
     if err != nil {
         t.Fatalf("Failed to encrypt")
     }
 
     // Decrypt
-    cipherBytes, _ := hex.DecodeString(cipher)
-    plaintext, err := DecryptAES(keyBytes, cipherBytes)
+    decryptedBytes, err := DecryptAES(keyBytes, cipherBytes)
     if err != nil {
         t.Fatalf("Failed to encrypt")
     }
 
-    if plaintext != "secret" {
-        t.Errorf("\nExpected:\t%s\nGot:\t\t%s", "secret", plaintext)
+    if string(decryptedBytes) != "secret" {
+        t.Errorf("\nExpected:\t%s\nGot:\t\t%s", "secret", string(decryptedBytes))
     }
 }
 
 
+func Test_WholeProcess(t *testing.T){
+    saltConstant := "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    // Generate SYM KEY
+    symkeyBytes, err := GenerateRandomBytesFn(32)
+    if err != nil {
+        t.Fatalf("Failed to generate symetric key")
+    }
 
+    // Derive KEY that will be used for encryption
+    keyBytes, err := DeriveKeyFn(saltConstant, "strong_password", 32) // hex string
+    if err != nil {
+        t.Fatalf("Failed to derive key from password")
+    }
+
+    // Encrypt
+    cipherBytes, err := EncryptAES(keyBytes, symkeyBytes) // double encoding ???
+    if err != nil {
+        t.Fatalf("Failed to encrypt")
+    }
+
+    // Decrypt
+    decryptedBytes, err := DecryptAES(keyBytes, cipherBytes)
+    if !bytes.Equal(decryptedBytes, symkeyBytes) {
+        t.Errorf("Missmatch\nSymKey:\t\t%s\nDecrypted:\t%s",
+        string(symkeyBytes), string(decryptedBytes))
+    }
+}
 
 
 

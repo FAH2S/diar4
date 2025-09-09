@@ -12,61 +12,54 @@ import (
 import (
     "golang.org/x/crypto/pbkdf2"
 )
-
-// generate salt, generate symkey, generate/derive key form pwd,
-// hash(salt + pwd), encrypt (symkey),
-
-// TODO: doc it
-func GenerateHexStrFn(hexLen int) (string, error) {
-    // 32 bytes = 256 bits = 64 hex char
-    fn := "GenerateHexStrFn"
-    if hexLen%2 != 0 {
-        return "", fmt.Errorf("%s: hex length must be even, got %d", fn, hexLen)
-    }
-
-    bytes := make([]byte, hexLen/2)
-    _, err := rand.Read(bytes)
-    if err != nil {
-        return "", fmt.Errorf("%s: %w", fn, err)
-    }
-    // Convert to hex string
-    return hex.EncodeToString(bytes), nil
+func HashPasswordFn(salt, password string) []byte {
+    hash := sha256.New()
+    hash.Write([]byte(salt))
+    hash.Write([]byte(password))
+    return hash.Sum(nil)
 }
 
 
-// TODO: doc it
-func DeriveKeyFn(salt, password string, hexLen int) (string, error) {
-    fn := "DeriveKeyFn"
-    if hexLen%2 != 0 {
-        return "", fmt.Errorf("%s: hex length must be even, got %d", fn, hexLen)
+func GenerateRandomBytesFn(length int) ([]byte, error) {
+    // 32 bytes = 256 bits = 64 hex char
+    fn := "GenerateRandomBytesFn"
+    bytes := make([]byte, length)
+    _, err := rand.Read(bytes)
+    if err != nil {
+        return nil, fmt.Errorf("%s: %w", fn, err)
     }
+
+    return bytes, nil
+}
+
+
+func DeriveKeyFn(salt, password string, keyLen int) ([]byte, error) {
+    fn := "DeriveKeyFn"
     // PBKDF2 conf
     iterations := 100_000
-    keyLen := hexLen/2
 
     saltBytes, err := hex.DecodeString(salt)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", fn, err)
+        return nil, fmt.Errorf("%s: %v", fn, err)
     }
 
     key := pbkdf2.Key([]byte(password), saltBytes, iterations, keyLen, sha256.New)
-    return hex.EncodeToString(key), nil
+    return key, nil
 }
 
 
-// TODO: doc it, maybe FN and not wrapper
-func EncryptAES(keyBytes, plaintextBytes []byte) (string, error) {
+func EncryptAES(keyBytes, plaintextBytes []byte) ([]byte, error) {
     wrap := "EncryptAES"
     // AES cipher block
     block, err := aes.NewCipher(keyBytes)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", wrap, err)
+        return nil, fmt.Errorf("%s: %v", wrap, err)
     }
 
     // GCM mode
     aesGCM, err := cipher.NewGCM(block)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", wrap, err)
+        return nil, fmt.Errorf("%s: %v", wrap, err)
     }
 
     // Nonce
@@ -76,39 +69,39 @@ func EncryptAES(keyBytes, plaintextBytes []byte) (string, error) {
     // Encrypt
     ciphertext := aesGCM.Seal(nil, nonce, plaintextBytes, nil)
     final := append(nonce, ciphertext...)
-    return hex.EncodeToString(final), nil
+    return final, nil
 }
-func DecryptAES(keyBytes, cipherBytes []byte) (string, error) {
+
+
+func DecryptAES(keyBytes, cipherBytes []byte) ([]byte, error) {
     wrap := "DecryptAES"
     // AES cipher block
     block, err := aes.NewCipher(keyBytes)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", wrap, err)
+        return nil, fmt.Errorf("%s: %v", wrap, err)
     }
 
     // GCM mode
     aesGCM, err := cipher.NewGCM(block)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", wrap, err)
+        return nil, fmt.Errorf("%s: %v", wrap, err)
     }
 
     nonceSize := aesGCM.NonceSize()
     if len(cipherBytes) < nonceSize {
-        return "", fmt.Errorf("%s: ciphertext too short", wrap)
+        return nil, fmt.Errorf("%s: ciphertext too short", wrap)
     }
     // cipher = nonce + actual ciphertext
     nonce := cipherBytes[:nonceSize]
     ciphertextBytes := cipherBytes[nonceSize:]
 
-    plaintext, err := aesGCM.Open(nil, nonce, ciphertextBytes, nil)
+    decryptedBytes, err := aesGCM.Open(nil, nonce, ciphertextBytes, nil)
     if err != nil {
-        return "", fmt.Errorf("%s: %v", wrap, err)
+        return nil, fmt.Errorf("%s: %v", wrap, err)
     }
-    return string(plaintext), nil
+    return decryptedBytes, nil
 }
 
 
-
-// TODO: test if enc dec works
 
 
