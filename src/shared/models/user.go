@@ -17,6 +17,7 @@ type User struct {
     Username    string `json:"username"`
     Salt        string `json:"salt"`
     Hash        string `json:"hash"`
+    SaltSymkey  string `json:"salt_symkey"`
     EncSymkey   string `json:"enc_symkey"`
 }
 
@@ -54,6 +55,9 @@ func (user *User) Validate() error {
     if err := IsValidHexStringFn(user.Hash, "hash", 64); err != nil {
         return err
     }
+    if err := IsValidHexStringFn(user.SaltSymkey, "salt_symkey", 64); err != nil {
+        return err
+    }
     if err := IsValidHexStringFn(user.EncSymkey, "enc_symkey", 120); err != nil {
         return err
     }
@@ -73,6 +77,9 @@ func ValidateUserMap(input map[string]interface{}) error {
         },
         "hash": func(val string) error {
             return IsValidHexStringFn(val, "hash", 64)
+        },
+        "salt_symkey": func(val string) error {
+            return IsValidHexStringFn(val, "salt_symkey", 64)
         },
         "enc_symkey": func(val string) error {
             return IsValidHexStringFn(val, "enc_symkey", 120)

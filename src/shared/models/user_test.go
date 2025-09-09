@@ -16,6 +16,7 @@ func Test_UserModel_Validate_Succ(t *testing.T) {
         "username":     "valid_test_user1",
         "salt":         "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
         "hash":         "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        "saltSymkey":   "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
         "encSymkey":    strings.Repeat("0123456789ab", 10),
     }
 
@@ -26,6 +27,7 @@ func Test_UserModel_Validate_Succ(t *testing.T) {
         Username:   userData["username"],
         Salt:       userData["salt"],
         Hash:       userData["hash"],
+        SaltSymkey: userData["saltSymkey"],
         EncSymkey:  userData["encSymkey"],
     }
     actual := user.Validate()
@@ -119,6 +121,12 @@ func Test_UserModel_HexString_Fail(t *testing.T) {
             length:     64,
             expected:   "hash: contains invalid characters",
         },{
+            name:       "SaltSymInvalidChars",
+            hexStr:     "3T4feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
+            hexStrName: "salt_symkey",
+            length:     64,
+            expected:   "salt_symkey: contains invalid characters",
+        },{
             name:       "encSymkeyTooShort",
             hexStr:     strings.Repeat("0123456789", 5),
             hexStrName: "enc_symkey",
@@ -131,7 +139,7 @@ func Test_UserModel_HexString_Fail(t *testing.T) {
             length:     120,
             expected:   "enc_symkey: length must be exactly 120 char long",
         },{
-            name:       "hashInvalidChars",
+            name:       "encSymkeyInvalidChars",
             hexStr:     strings.Repeat("g123456789", 12),
             hexStrName: "enc_symkey",
             length:     120,
