@@ -64,6 +64,8 @@ func HandlePgErrorFn(table string, err error) (int, error) {
     fn := "HandlePgErrorFn"
     if pqErr, ok := err.(*pq.Error); ok {
         switch pqErr.Code {
+        case "23502":// Missing required column, violated not-null constraint
+            return 422, fmt.Errorf("%s: invalid %s data/format: %w", fn, table, err)
         case "23505":// User already exist/conflict
             return 409, fmt.Errorf("%s: %s already exists: %w", fn, table, err)
         case "23514":// Invalid data/format

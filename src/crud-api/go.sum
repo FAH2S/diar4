@@ -26,6 +26,8 @@ github.com/FAH2S/diar4/src/shared/models v0.0.0-20250826135932-d7550021d9e1 h1:R
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250826135932-d7550021d9e1/go.mod h1:tFPWSdGeC1gTY/kEyr3I4DTDj329sTRhFdCDJ91Qpgg=
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250828143826-8ca2d9ad4d84 h1:FL8nfFI05aquZ4LR+X9TekVkjyZ6/Gl8NeDTVf755G8=
 github.com/FAH2S/diar4/src/shared/models v0.0.0-20250828143826-8ca2d9ad4d84/go.mod h1:tFPWSdGeC1gTY/kEyr3I4DTDj329sTRhFdCDJ91Qpgg=
+github.com/FAH2S/diar4/src/shared/models v0.0.0-20250909135919-e48a684e1033 h1:xdchMoObKh+DTjwe2KTVxrjl1T66P5n5Z/dnuQDXw8k=
+github.com/FAH2S/diar4/src/shared/models v0.0.0-20250909135919-e48a684e1033/go.mod h1:tFPWSdGeC1gTY/kEyr3I4DTDj329sTRhFdCDJ91Qpgg=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/cenkalti/backoff/v4 v4.2.1 h1:y4OZtCnogmCPw98Zjyt5a6+QwPLGkiQsYW5oUqylYbM=

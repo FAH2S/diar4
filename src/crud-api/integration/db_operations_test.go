@@ -16,6 +16,7 @@ import (
 //{{{ Insert user
 func Test_InsertUser(t *testing.T) {
     validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+    validSaltSymkey :=  "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443"
     validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
     validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     tests := []struct {
@@ -30,6 +31,7 @@ func Test_InsertUser(t *testing.T) {
                 Username:   "test_user_123",
                 Salt:       validSalt,
                 Hash:       validHash,
+                SaltSymkey: validSaltSymkey,
                 EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 201,
@@ -40,6 +42,7 @@ func Test_InsertUser(t *testing.T) {
                 Username:   "test_user_123",
                 Salt:       validSalt,
                 Hash:       validHash,
+                SaltSymkey: validSaltSymkey,
                 EncSymkey:  validEncSymkey,
             },
             expectedStatusCode: 409,
@@ -66,6 +69,27 @@ func Test_InsertUser(t *testing.T) {
             expectedError:      errors.New("violates check constraint \"users_hash_check\""),
         }, {// Keep in mind this is DB constraint check not .validate (validate is endpoint lvl)
             name:               "unprocessableEncSymkey",
+            user:               smodels.User{
+                Username:   "test_user_invalid_data",
+                Salt:       validSalt,
+                Hash:       validHash,
+                EncSymkey:  "",
+            },
+            expectedStatusCode: 422,
+            expectedError:      errors.New("violates check constraint \"users_enc_symkey_check\""),
+        }, {
+            name:               "unprocessableSaltEncSymkey",
+            user:               smodels.User{
+                Username:   "test_user_invalid_data",
+                Salt:       validSalt,
+                Hash:       validHash,
+                SaltSymkey: "invalid_salt",
+                EncSymkey:  "",
+            },
+            expectedStatusCode: 422,
+            expectedError:      errors.New("violates check constraint \"users_enc_symkey_check\""),
+        }, {
+            name:               "unprocessableSaltEncSymkeyNonNullConstraint",
             user:               smodels.User{
                 Username:   "test_user_invalid_data",
                 Salt:       validSalt,
@@ -101,12 +125,14 @@ func Test_InsertUser(t *testing.T) {
 func Test_SelectUser(t *testing.T) {
     validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validSaltSymkey :=  "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443"
     validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     // Create user that will be fetched (not dependant on previous tests)
     createUser := smodels.User{
         Username:   "test_select_user1",
         Salt:       validSalt,
         Hash:       validHash,
+        SaltSymkey: validSaltSymkey,
         EncSymkey:  validEncSymkey,
     }
     _, err := cruduser.InsertUser(db, createUser)
@@ -131,6 +157,7 @@ func Test_SelectUser(t *testing.T) {
                 Username:   "test_select_user1",
                 Salt:       validSalt,
                 Hash:       validHash,
+                SaltSymkey: validSaltSymkey,
                 EncSymkey:  validEncSymkey,
             },
         }, {
@@ -172,12 +199,14 @@ func Test_SelectUser(t *testing.T) {
 func Test_UpdateUser(t *testing.T) {
     validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validSaltSymkey :=  "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443"
     validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     // Create user that will be updated (not dependant on previous tests)
     createUser := smodels.User{
         Username:   "test_update_user1",
         Salt:       validSalt,
         Hash:       validHash,
+        SaltSymkey: validSaltSymkey,
         EncSymkey:  validEncSymkey,
     }
     _, err := cruduser.InsertUser(db, createUser)
@@ -191,8 +220,8 @@ func Test_UpdateUser(t *testing.T) {
         expectedStatusCode  int
         expectedError       error
     }{
-        {
         //succ, 422 empty, 404 not found/updated, test that gives non existatnt row
+        {
             name:               "Success",
             data:               map[string]interface{}{
                 "hash":"1111d825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
@@ -200,6 +229,22 @@ func Test_UpdateUser(t *testing.T) {
             username:           "test_update_user1",
             expectedStatusCode: 200,
             expectedError:      nil,
+        }, {
+            name:               "SuccessSaltSymkey",
+            data:               map[string]interface{}{
+                "salt_symkey":"1111d825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+            },
+            username:           "test_update_user1",
+            expectedStatusCode: 200,
+            expectedError:      nil,
+        }, {
+            name:               "FailSaltSymkeyConstraint",
+            data:               map[string]interface{}{
+                "salt_symkey":"111a5aa4de",
+            },
+            username:           "test_update_user1",
+            expectedStatusCode: 422,
+            expectedError:      errors.New("violates check constraint"),
         }, {
             name:               "FailNonExistantField400",
             data:               map[string]interface{}{
@@ -250,12 +295,14 @@ func Test_UpdateUser(t *testing.T) {
 func Test_DeleteUser(t *testing.T) {
     validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validSaltSymkey :=  "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443"
     validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     // Create user that will be updated (not dependant on previous tests)
     createUser := smodels.User{
         Username:   "test_delete_user1",
         Salt:       validSalt,
         Hash:       validHash,
+        SaltSymkey: validSaltSymkey,
         EncSymkey:  validEncSymkey,
     }
     _, err := cruduser.InsertUser(db, createUser)

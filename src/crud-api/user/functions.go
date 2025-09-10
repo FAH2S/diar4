@@ -14,11 +14,11 @@ func InsertUser(db *sql.DB, user smodels.User) (int, error) {
     wrap := "InsertUser"
     // Create sql query
     query := `
-        INSERT INTO users (username, salt, hash, enc_symkey)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (username, salt, hash, salt_symkey, enc_symkey)
+        VALUES ($1, $2, $3, $4, $5)
     `
     // Insert
-    result, err := db.Exec(query, user.Username, user.Salt, user.Hash, user.EncSymkey)
+    result, err := db.Exec(query, user.Username, user.Salt, user.Hash, user.SaltSymkey, user.EncSymkey)
     // Map error codes to status codes
     if err != nil {
         statusCode, err := sdb.HandlePgErrorFn("user", err)
@@ -37,7 +37,7 @@ func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
     wrap := "SelectUser"
     // Create query
     query := `
-        SELECT username, salt, hash, enc_symkey FROM users
+        SELECT username, salt, hash, salt_symkey, enc_symkey FROM users
         WHERE username = $1 LIMIT 1;
     `
     // Create user instance
@@ -47,6 +47,7 @@ func SelectUser(db *sql.DB, username string) (int, *smodels.User, error) {
         &user.Username,
         &user.Salt,
         &user.Hash,
+        &user.SaltSymkey,
         &user.EncSymkey,
     )
     // Check for errors 404, 500, otherwise 200

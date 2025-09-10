@@ -143,7 +143,7 @@ func UpdateUserEndpoint(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
     // Sanitize data
     // - remove illegal keys => sapi
-    allowed := []string{"username", "salt", "hash", "enc_symkey"}
+    allowed := []string{"username", "salt", "hash", "salt_symkey", "enc_symkey"}
     filterdData := sapi.SanitizeKeysFn(inputData, allowed)
     // - check each present field via some user validate => smodels
     err = smodels.ValidateUserMap(filterdData); if err != nil {

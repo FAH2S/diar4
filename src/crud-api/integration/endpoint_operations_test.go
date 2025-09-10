@@ -115,6 +115,7 @@ func Test_MiddlewareEndpoint_HeaderFail(t *testing.T){
 func Test_CreateUserEndpoint(t *testing.T){
     validSalt :=        "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     validHash :=        "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de"
+    validSaltSymkey :=  "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443"
     validEncSymkey :=   "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
     tests := []EndpointTestCase{
         {
@@ -123,8 +124,9 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"%s",
                 "hash":"%s",
+                "salt_symkey":"%s",
                 "enc_symkey":"%s"
-            }`, validSalt, validHash, validEncSymkey),
+            }`, validSalt, validHash, validSaltSymkey, validEncSymkey),
             ExpectedStatusCode: 201,
             ExpectedMessage:    "Success: create user 'test_user_endpoint1'",
             ExpectedError:      "",
@@ -146,8 +148,9 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"%s",
                 "hash":"%s",
+                "salt_symkey":"%s",
                 "enc_symkey":"%s"
-            }`, validSalt, validHash, validEncSymkey),
+            }`, validSalt, validHash, validSaltSymkey, validEncSymkey),
             ExpectedStatusCode: 409,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "User already exist",
@@ -158,8 +161,9 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"fishy user |._.|><|",
                 "salt":"%s",
                 "hash":"%s",
+                "salt_symkey":"%s",
                 "enc_symkey":"%s"
-            }`, validSalt, validHash, validEncSymkey),
+            }`, validSalt, validHash, validSaltSymkey, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'fishy user |._.|><|'",
             ExpectedError:      "Invalid input format: username: contains invalid characters",
@@ -170,8 +174,9 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"344feecf40d261e0341a87aa5df6d49c4e31",
                 "hash":"%s",
+                "salt_symkey":"%s",
                 "enc_symkey":"%s"
-            }`, validHash, validEncSymkey),
+            }`, validHash, validSaltSymkey, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: salt: length must be exactly 64 char long",
@@ -182,11 +187,25 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"%s",
                 "hash":"^c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+                "salt_symkey":"%s",
                 "enc_symkey":"%s"
-            }`, validSalt, validEncSymkey),
+            }`, validSalt, validSaltSymkey, validEncSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: hash: contains invalid characters",
+            ExpectedData:       nil,
+        }, {
+            Name:               "UnprocessableSaltSymkey",
+            Body:               fmt.Sprintf(`{
+                "username":"test_user_endpoint1",
+                "salt":"%s",
+                "hash":"%s",
+                "salt_symkey":"^^^^^^",
+                "enc_symkey":"%s"
+            }`, validSalt, validHash, validEncSymkey),
+            ExpectedStatusCode: 422,
+            ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
+            ExpectedError:      "Invalid input format: salt_symkey: length must be exactly 64 char long",
             ExpectedData:       nil,
         }, {
             Name:               "UnprocessableEncSymkey",
@@ -194,8 +213,9 @@ func Test_CreateUserEndpoint(t *testing.T){
                 "username":"test_user_endpoint1",
                 "salt":"%s",
                 "hash":"%s",
+                "salt_symkey":"%s",
                 "enc_symkey":""
-            }`, validSalt, validHash),
+            }`, validSalt, validHash, validSaltSymkey),
             ExpectedStatusCode: 422,
             ExpectedMessage:    "Fail: create user 'test_user_endpoint1'",
             ExpectedError:      "Invalid input format: enc_symkey: length must be exactly 120 char long",
@@ -227,6 +247,7 @@ func Test_ReadUserEndpoint(t *testing.T){
         Username:   username,
         Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
         Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        SaltSymkey: "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443",
         EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
     }
     _, err := cruduser.InsertUser(db, user)
@@ -246,6 +267,7 @@ func Test_ReadUserEndpoint(t *testing.T){
                 "username":username,
                 "salt":user.Salt,
                 "hash":user.Hash,
+                "salt_symkey":user.SaltSymkey,
                 "enc_symkey":user.EncSymkey,
             },
         },{
@@ -297,6 +319,7 @@ func Test_UpdateUserEndpoint(t *testing.T){
         Username:   username,
         Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
         Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        SaltSymkey: "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443",
         EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
     }
     _, err := cruduser.InsertUser(db, user)
@@ -309,6 +332,18 @@ func Test_UpdateUserEndpoint(t *testing.T){
             Body:               `{
                 "username":"test_user_update1",
                 "salt":"111feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
+            }`,
+            ExpectedStatusCode: 200,
+            ExpectedMessage:    "Success: update user 'test_user_update1'",
+            ExpectedError:      "",
+            ExpectedData:       map[string]any{
+                "username":"test_user_update1",
+            },
+        }, {
+            Name:               "UpdateUserSaltSymkey",
+            Body:               `{
+                "username":"test_user_update1",
+                "salt_symkey":"111feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31"
             }`,
             ExpectedStatusCode: 200,
             ExpectedMessage:    "Success: update user 'test_user_update1'",
@@ -412,6 +447,7 @@ func Test_DeleteUserEndpoint(t *testing.T){
         Username:   username,
         Salt:       "344feecf40d375380ed5f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
         Hash:       "0c8fd825308df79b313a71b90ee93f7d889207c2277c477b424f83162a5aa4de",
+        SaltSymkey: "13e4c94d6fd5aa78a1430e1622f9c7fb7469209b325f5de083573d04fceef443",
         EncSymkey:  "0c8fd08df79b313a71b90ee93f7d889207c2277c477b424f831a5aa4de344feecf40d3753805f523b9029647bf7c9f2261e0341a87aa5df6d49c4e31",
     }
     _, err := cruduser.InsertUser(db, user)
